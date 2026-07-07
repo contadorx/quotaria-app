@@ -12,6 +12,7 @@ import type {
   ClasseQuota,
   TipoBem,
   TipoClausula,
+  StatusHolding,
 } from '@/lib/database.types'
 
 export async function signout() {
@@ -288,4 +289,48 @@ export async function deleteClausula(formData: FormData) {
   await supabase.from('clausulas').delete().eq('id', id)
   revalidatePath(dest)
   redirect(dest)
+}
+
+// -------------------------- Edições --------------------------
+export async function updateFamily(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app')
+  const name = s(formData, 'name')
+  if (!name) {
+    redirect(`/app/familias/${id}?error=` + encodeURIComponent('Informe o nome da família.'))
+  }
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('families')
+    .update({ name, notes: orNull(s(formData, 'notes')) })
+    .eq('id', id)
+  if (error) redirect(`/app/familias/${id}?error=` + encodeURIComponent(error.message))
+  revalidatePath(`/app/familias/${id}`)
+  redirect(`/app/familias/${id}`)
+}
+
+export async function updateHolding(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app')
+  const razaoSocial = s(formData, 'razao_social')
+  if (!razaoSocial) {
+    redirect(`/app/holdings/${id}?error=` + encodeURIComponent('Informe a razão social.'))
+  }
+  const capitalRaw = s(formData, 'capital_social')
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('holdings')
+    .update({
+      razao_social: razaoSocial,
+      nome_fantasia: orNull(s(formData, 'nome_fantasia')),
+      cnpj: orNull(s(formData, 'cnpj')),
+      tipo_societario: s(formData, 'tipo_societario') as TipoSocietario,
+      status: s(formData, 'status') as StatusHolding,
+      data_constituicao: orNull(s(formData, 'data_constituicao')),
+      capital_social: capitalRaw === '' ? null : Number(capitalRaw),
+    })
+    .eq('id', id)
+  if (error) redirect(`/app/holdings/${id}?error=` + encodeURIComponent(error.message))
+  revalidatePath(`/app/holdings/${id}`)
+  redirect(`/app/holdings/${id}`)
 }

@@ -8,11 +8,13 @@ export function PageHeader({
   title,
   description,
   back,
+  action,
 }: {
   eyebrow?: string
   title: string
   description?: string
   back?: { href: string; label: string }
+  action?: React.ReactNode
 }) {
   return (
     <div className="mb-8">
@@ -29,8 +31,13 @@ export function PageHeader({
           {eyebrow}
         </div>
       )}
-      <h1 className="mt-1 text-2xl font-bold tracking-tight text-ink">{title}</h1>
-      {description && <p className="mt-2 max-w-xl text-sm text-ink-muted">{description}</p>}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-ink">{title}</h1>
+          {description && <p className="mt-2 max-w-xl text-sm text-ink-muted">{description}</p>}
+        </div>
+        {action && <div className="shrink-0 pt-1">{action}</div>}
+      </div>
     </div>
   )
 }

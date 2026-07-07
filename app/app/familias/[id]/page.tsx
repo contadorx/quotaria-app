@@ -9,9 +9,10 @@ import {
   LABEL_PAPEL_FAMILIAR,
   LABEL_REGIME_BENS,
 } from '@/lib/format'
-import { createHolding, createSocio, deleteHolding, deleteSocio } from '../../actions'
+import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily } from '../../actions'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
+import { EditDialog } from '@/components/edit-dialog'
 
 export default async function FamilyDetail({
   params,
@@ -40,6 +41,24 @@ export default async function FamilyDetail({
         back={{ href: '/app', label: 'Famílias' }}
         title={family.name}
         description={`Cadastrada em ${formatarData(family.created_at)}`}
+        action={
+          <EditDialog title="Editar família">
+            <form className="space-y-4">
+              <input type="hidden" name="id" value={family.id} />
+              <div>
+                <Label htmlFor="edit_name">Nome</Label>
+                <input id="edit_name" name="name" defaultValue={family.name} required className={fieldClass} />
+              </div>
+              <div>
+                <Label htmlFor="edit_notes">Observações</Label>
+                <textarea id="edit_notes" name="notes" defaultValue={family.notes ?? ''} rows={3} className={fieldClass} />
+              </div>
+              <div className="flex justify-end">
+                <SubmitButton action={updateFamily}>Salvar</SubmitButton>
+              </div>
+            </form>
+          </EditDialog>
+        }
       />
 
       {searchParams?.error && (

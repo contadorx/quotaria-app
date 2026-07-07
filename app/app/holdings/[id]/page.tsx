@@ -11,9 +11,10 @@ import {
   LABEL_TIPO_BEM,
   LABEL_TIPO_CLAUSULA,
 } from '@/lib/format'
-import { createQuota, createBem, createClausula, deleteQuota, deleteBem, deleteClausula } from '../../actions'
+import { createQuota, createBem, createClausula, deleteQuota, deleteBem, deleteClausula, updateHolding } from '../../actions'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
+import { EditDialog } from '@/components/edit-dialog'
 
 export default async function HoldingDetail({
   params,
@@ -66,6 +67,48 @@ export default async function HoldingDetail({
       <PageHeader
         back={{ href: family ? `/app/familias/${family.id}` : '/app', label: family?.name ?? 'Famílias' }}
         title={holding.razao_social}
+        action={
+          <EditDialog title="Editar holding">
+            <form className="grid gap-4 sm:grid-cols-2">
+              <input type="hidden" name="id" value={holdingId} />
+              <div className="sm:col-span-2">
+                <Label htmlFor="edit_razao">Razão social</Label>
+                <input id="edit_razao" name="razao_social" defaultValue={holding.razao_social} required className={fieldClass} />
+              </div>
+              <div>
+                <Label htmlFor="edit_fantasia">Nome fantasia</Label>
+                <input id="edit_fantasia" name="nome_fantasia" defaultValue={holding.nome_fantasia ?? ''} className={fieldClass} />
+              </div>
+              <div>
+                <Label htmlFor="edit_cnpj">CNPJ</Label>
+                <input id="edit_cnpj" name="cnpj" defaultValue={holding.cnpj ?? ''} className={fieldClass} />
+              </div>
+              <div>
+                <Label htmlFor="edit_tipo">Tipo</Label>
+                <select id="edit_tipo" name="tipo_societario" defaultValue={holding.tipo_societario} className={fieldClass}>
+                  {Object.entries(LABEL_TIPO_SOCIETARIO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="edit_status">Status</Label>
+                <select id="edit_status" name="status" defaultValue={holding.status} className={fieldClass}>
+                  {Object.entries(LABEL_STATUS_HOLDING).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="edit_data">Constituição</Label>
+                <input id="edit_data" name="data_constituicao" type="date" defaultValue={holding.data_constituicao ?? ''} className={fieldClass} />
+              </div>
+              <div>
+                <Label htmlFor="edit_capital">Capital social</Label>
+                <input id="edit_capital" name="capital_social" type="number" step="0.01" min="0" defaultValue={holding.capital_social ?? ''} className={fieldClass} />
+              </div>
+              <div className="flex justify-end sm:col-span-2">
+                <SubmitButton action={updateHolding}>Salvar</SubmitButton>
+              </div>
+            </form>
+          </EditDialog>
+        }
       />
 
       <Card className="mb-8 grid grid-cols-2 gap-x-8 gap-y-4 p-5 sm:grid-cols-4">
