@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
-import { Flame } from 'lucide-react'
+import Link from 'next/link'
+import { Flame, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/format'
 import {
@@ -51,6 +52,13 @@ export default async function RadarClientePage({
         title={c.nome}
         description={`Score ${score}/100 · prioridade ${classe} · ${LABEL_STATUS_RADAR[c.status]}`}
         action={
+          <div className="flex items-center gap-2">
+          <Link
+            href={`/app/radar/${c.id}/diagnostico`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-soft"
+          >
+            <FileText size={15} /> Gerar diagnóstico
+          </Link>
           <EditDialog title="Editar sinais e premissas">
             <form className="grid gap-4 sm:grid-cols-2">
               <input type="hidden" name="id" value={c.id} />
@@ -92,11 +100,36 @@ export default async function RadarClientePage({
                   <input id="e_inv" name="inventario_pct" type="number" step="0.5" min="0" max="20" defaultValue={c.inventario_pct} className={fieldClass} />
                 </div>
               </div>
+
+              <div className="sm:col-span-2 border-t border-line pt-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Para o diagnóstico</p>
+                <input type="hidden" name="diag_marker" value="1" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="flex items-center gap-2 text-sm text-ink">
+                    <input type="checkbox" name="holding_existe" defaultChecked={c.holding_existe} className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+                    Já tem holding constituída
+                  </label>
+                  <div>
+                    <Label htmlFor="e_hano">Ano da holding</Label>
+                    <input id="e_hano" name="holding_ano" type="number" min="1990" max="2100" defaultValue={c.holding_ano ?? ''} placeholder="ex.: 2023" className={fieldClass} />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-ink">
+                    <input type="checkbox" name="ata_em_dia" defaultChecked={c.ata_em_dia} className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+                    Atas em dia
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-ink">
+                    <input type="checkbox" name="doacao_iniciada" defaultChecked={c.doacao_iniciada} className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+                    Doação de quotas iniciada
+                  </label>
+                </div>
+              </div>
+
               <div className="flex justify-end sm:col-span-2">
                 <SubmitButton action={updateRadarSinais}>Salvar</SubmitButton>
               </div>
             </form>
           </EditDialog>
+          </div>
         }
       />
 

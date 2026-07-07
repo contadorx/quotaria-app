@@ -743,6 +743,10 @@ export interface Database {
           n_herdeiros: number
           itcmd_pct: number
           inventario_pct: number
+          holding_existe: boolean
+          holding_ano: number | null
+          ata_em_dia: boolean
+          doacao_iniciada: boolean
           status: StatusRadar
           lgpd_confirmado_em: string | null
           notes: string | null
@@ -763,6 +767,10 @@ export interface Database {
           n_herdeiros?: number
           itcmd_pct?: number
           inventario_pct?: number
+          holding_existe?: boolean
+          holding_ano?: number | null
+          ata_em_dia?: boolean
+          doacao_iniciada?: boolean
           status?: StatusRadar
           lgpd_confirmado_em?: string | null
           notes?: string | null
@@ -783,6 +791,10 @@ export interface Database {
           n_herdeiros?: number
           itcmd_pct?: number
           inventario_pct?: number
+          holding_existe?: boolean
+          holding_ano?: number | null
+          ata_em_dia?: boolean
+          doacao_iniciada?: boolean
           status?: StatusRadar
           lgpd_confirmado_em?: string | null
           notes?: string | null

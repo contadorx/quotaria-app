@@ -807,6 +807,10 @@ export async function updateRadarSinais(formData: FormData) {
     inventario_pct?: number
     notes?: string
     lgpd_confirmado_em?: string
+    holding_existe?: boolean
+    holding_ano?: number | null
+    ata_em_dia?: boolean
+    doacao_iniciada?: boolean
   } = {
     n_imoveis: Math.round(num('n_imoveis')),
     patrimonio: num('patrimonio'),
@@ -814,6 +818,14 @@ export async function updateRadarSinais(formData: FormData) {
     socio_pj: formData.get('socio_pj') === 'on',
     recebe_dividendos: formData.get('recebe_dividendos') === 'on',
     n_herdeiros: Math.round(num('n_herdeiros')),
+  }
+  // campos do diagnóstico: só quando o formulário os envia (o import da DIRPF não envia)
+  if (formData.has('holding_existe') || formData.has('diag_marker')) {
+    payload.holding_existe = formData.get('holding_existe') === 'on'
+    payload.ata_em_dia = formData.get('ata_em_dia') === 'on'
+    payload.doacao_iniciada = formData.get('doacao_iniciada') === 'on'
+    const ano = s(formData, 'holding_ano')
+    payload.holding_ano = ano ? Math.round(Number(ano)) : null
   }
   // uf/premissas: só quando o formulário as envia (o import da DIRPF não envia — preserva o que já está salvo)
   if (formData.has('uf')) payload.uf = s(formData, 'uf') || 'SP'
