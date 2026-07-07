@@ -42,11 +42,16 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     icon: Gift,
     match: (p) => p.startsWith('/app/doacoes'),
   },
+  {
+    href: '/app/relatorios',
+    label: 'Relatórios',
+    icon: FileText,
+    match: (p) => p.startsWith('/app/relatorios'),
+  },
 ]
 
 const EM_BREVE: { label: string; icon: LucideIcon }[] = [
   { label: 'Documentos', icon: FolderClosed },
-  { label: 'Relatórios', icon: FileText },
 ]
 
 export function Sidebar({
