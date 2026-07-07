@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, AlertTriangle, CheckCircle2, CalendarDays, Coins, HandCoins, FolderOpen, LayoutGrid } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { faroisDaFamilia } from '@/lib/farois'
 import {
   formatarData,
   LABEL_TIPO_SOCIETARIO,
@@ -42,6 +43,17 @@ export default async function FamilyDetail({
     .from('holdings').select('id, razao_social, cnpj, tipo_societario, status, created_at')
     .eq('family_id', params.id).order('razao_social')
 
+  const holdingIds = (holdings ?? []).map((h) => h.id)
+  const farois = await faroisDaFamilia(supabase, params.id, holdingIds)
+  const fam = `?fam=${params.id}`
+  const atalhos = [
+    { label: 'Calendário', href: `/app/calendario${fam}`, Icon: CalendarDays },
+    { label: 'Mês da Holding', href: `/app/mes${fam}`, Icon: LayoutGrid },
+    { label: 'Distribuições', href: `/app/distribuicoes${fam}`, Icon: Coins },
+    { label: 'Doações', href: `/app/doacoes${fam}`, Icon: HandCoins },
+    { label: 'Documentos', href: `/app/documentos${fam}`, Icon: FolderOpen },
+  ]
+
   return (
     <div>
       <PageHeader
@@ -69,6 +81,50 @@ export default async function FamilyDetail({
       />
 
       {searchParams?.error && <p className="mb-6 text-sm font-medium text-red-600">{searchParams.error}</p>}
+
+      {/* COCKPIT — o que fazer nesta família */}
+      <Card className="mb-4 p-5">
+        <div className="flex items-center justify-between">
+          <SectionTitle>O que fazer</SectionTitle>
+        </div>
+        {farois.length === 0 ? (
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+            <CheckCircle2 size={16} /> Tudo em dia nesta família — nenhuma pendência agora.
+          </div>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {farois.map((f) => (
+              <li key={f.chave}>
+                <Link
+                  href={f.href}
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-sm transition ${
+                    f.estado === 'alerta' ? 'border-red-200 bg-red-50 hover:bg-red-100' : 'border-amber-200 bg-amber-50 hover:bg-amber-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 font-medium text-ink">
+                    <AlertTriangle size={15} className={f.estado === 'alerta' ? 'text-red-600' : 'text-amber-600'} />
+                    {f.label}
+                  </span>
+                  <ChevronRight size={16} className="text-ink-soft" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* atalhos para os módulos, já filtrados por esta família */}
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+          {atalhos.map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
+            >
+              <a.Icon size={14} /> {a.label}
+            </Link>
+          ))}
+        </div>
+      </Card>
 
       {/* SÓCIOS */}
       <SectionTitle>Sócios</SectionTitle>

@@ -8,6 +8,7 @@ import { DeleteButton } from '@/components/delete-button'
 import { EditDialog } from '@/components/edit-dialog'
 import { PendingButton } from '@/components/submit-button'
 import { FormNovaDoacao } from '@/components/form-nova-doacao'
+import { FiltroFamiliaChip } from '@/components/filtro-familia-chip'
 
 type Doacao = {
   id: string
@@ -39,7 +40,7 @@ type Doacao = {
 export default async function DoacoesPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; fam?: string }
 }) {
   const supabase = createClient()
 
@@ -55,8 +56,11 @@ export default async function DoacoesPage({
   const nomePorHolding = new Map((holdings ?? []).map((h) => [h.id, h.razao_social]))
   const socioNome = new Map((socios ?? []).map((s) => [s.id, s.nome]))
 
+  const famId = searchParams?.fam
+  const idsFam = new Set((holdings ?? []).filter((h) => !famId || h.family_id === famId).map((h) => h.id))
+
   const temHoldings = (holdings ?? []).length > 0
-  const lista = (doacoes ?? []) as Doacao[]
+  const lista = ((doacoes ?? []) as Doacao[]).filter((d) => !famId || idsFam.has(d.holding_id))
 
   const planejadas = lista.filter((d) => d.status === 'planejada')
   const emCartorio = lista.filter((d) => d.status === 'em_cartorio')
@@ -80,6 +84,8 @@ export default async function DoacoesPage({
         title="Doações"
         description="Cronograma de doação de quotas em vida — o ritmo que realiza a economia de ITCMD e inventário prometida na proposta."
       />
+
+      {famId && <FiltroFamiliaChip nome={nomeFamilia.get(famId) ?? 'Família'} base="/app/doacoes" />}
 
       {atrasadas.length > 0 && (
         <div className="mb-6 flex items-start gap-2 rounded-xl2 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

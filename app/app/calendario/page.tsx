@@ -4,6 +4,7 @@ import { createEvento, toggleEvento, deleteEvento, seedMarcosReforma } from '../
 import { PageHeader, Card, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
 import { PendingButton } from '@/components/submit-button'
+import { FiltroFamiliaChip } from '@/components/filtro-familia-chip'
 
 type Evento = {
   id: string
@@ -17,26 +18,35 @@ type Evento = {
 export default async function CalendarioPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; fam?: string }
 }) {
   const supabase = createClient()
+
+  const { data: holdings } = await supabase
+    .from('holdings')
+    .select('id, razao_social, family_id')
+    .order('razao_social')
+
+  // filtro por família (?fam=)
+  const famId = searchParams?.fam
+  const familia = famId ? (holdings ?? []).find((h) => h.family_id === famId) : null
+  const { data: famRow } = famId
+    ? await supabase.from('families').select('name').eq('id', famId).maybeSingle()
+    : { data: null }
+  const holdingsFam = famId ? (holdings ?? []).filter((h) => h.family_id === famId) : (holdings ?? [])
+  const idsFam = new Set(holdingsFam.map((h) => h.id))
 
   const { data: eventos } = await supabase
     .from('eventos')
     .select('id, holding_id, titulo, tipo, data_prevista, status')
     .order('data_prevista')
 
-  const { data: holdings } = await supabase
-    .from('holdings')
-    .select('id, razao_social')
-    .order('razao_social')
-
   const nomePorHolding = new Map((holdings ?? []).map((h) => [h.id, h.razao_social]))
 
   const hoje = new Date().toISOString().slice(0, 10)
   const hoje30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10)
 
-  const lista = (eventos ?? []) as Evento[]
+  const lista = ((eventos ?? []) as Evento[]).filter((e) => !famId || (e.holding_id && idsFam.has(e.holding_id)))
   const pendentes = lista.filter((e) => e.status !== 'concluido')
   const atrasados = pendentes.filter((e) => e.data_prevista < hoje)
   const proximos = pendentes.filter((e) => e.data_prevista >= hoje && e.data_prevista <= hoje30)
@@ -59,6 +69,8 @@ export default async function CalendarioPage({
           </form>
         }
       />
+
+      {famId && <FiltroFamiliaChip nome={famRow?.name ?? 'Família'} base="/app/calendario" />}
 
       <Card className="p-5">
         <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

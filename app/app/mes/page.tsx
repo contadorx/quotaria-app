@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { salvarFechamento } from '../actions'
 import { PageHeader, Card, EmptyState, Label, SubmitButton, fieldClass } from '@/components/ui'
+import { FiltroFamiliaChip } from '@/components/filtro-familia-chip'
 import { EditDialog } from '@/components/edit-dialog'
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -36,7 +37,7 @@ function semaforo(f: Fechamento | undefined) {
 export default async function MesPage({
   searchParams,
 }: {
-  searchParams: { ano?: string; mes?: string; error?: string }
+  searchParams: { ano?: string; mes?: string; error?: string; fam?: string }
 }) {
   const hoje = new Date()
   const ano = Number(searchParams.ano) || hoje.getFullYear()
@@ -50,7 +51,12 @@ export default async function MesPage({
   const next = mes === 12 ? { a: ano + 1, m: 1 } : { a: ano, m: mes + 1 }
 
   const supabase = createClient()
-  const { data: holdings } = await supabase.from('holdings').select('id, razao_social').order('razao_social')
+  const famId = searchParams?.fam
+  const { data: famRow } = famId
+    ? await supabase.from('families').select('name').eq('id', famId).maybeSingle()
+    : { data: null }
+  const { data: holdingsRaw } = await supabase.from('holdings').select('id, razao_social, family_id').order('razao_social')
+  const holdings = (holdingsRaw ?? []).filter((h) => !famId || h.family_id === famId)
   const { data: fechs } = await supabase
     .from('fechamentos').select('holding_id, distribuicoes_ok, documentos_ok, alertas_ok, alugueis_ok, doacoes_ok, notes')
     .eq('competencia', competencia)
@@ -99,6 +105,8 @@ export default async function MesPage({
         title="O Mês da Holding"
         description="O fechamento guiado de cada holding. Os itens já vêm pré-marcados a partir dos lançamentos do mês — você revisa e salva."
       />
+
+      {famId && <FiltroFamiliaChip nome={famRow?.name ?? 'Família'} base="/app/mes" />}
 
       <div className="mb-6 flex items-center justify-between">
         <Link href={`/app/mes?ano=${prev.a}&mes=${prev.m}`} className="flex items-center gap-1 rounded-lg border border-line bg-white px-3 py-1.5 text-sm text-ink-muted transition hover:bg-surface">

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ChevronRight, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { pendenciasPorFamilia } from '@/lib/farois'
 import { formatarData, formatarDataISO, formatarMoeda } from '@/lib/format'
 import { createFamily, deleteFamily } from './actions'
 import { PageHeader, Card, ListCard, EmptyState, Label, SubmitButton, fieldClass } from '@/components/ui'
@@ -14,6 +15,7 @@ export default async function AppHome({
   const supabase = createClient()
 
   const { data: families } = await supabase.from('families').select('id, name, created_at').order('created_at', { ascending: false })
+  const pendencias = await pendenciasPorFamilia(supabase)
   const { data: holdings } = await supabase.from('holdings').select('id')
   const { data: bens } = await supabase.from('bens').select('valor_contabil, valor_mercado')
   const { data: eventos } = await supabase.from('eventos').select('data_prevista, status').eq('status', 'pendente')
@@ -115,7 +117,15 @@ export default async function AppHome({
                   <Link href={`/app/familias/${f.id}`} className="flex flex-1 items-center justify-between">
                     <span className="font-semibold text-ink">{f.name}</span>
                     <span className="mr-3 flex items-center gap-3 text-xs text-ink-soft">
-                      criada em {formatarData(f.created_at)}
+                      {pendencias.get(f.id) ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                          {pendencias.get(f.id)} {pendencias.get(f.id) === 1 ? 'pendência' : 'pendências'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                          em dia
+                        </span>
+                      )}
                       <ChevronRight size={16} />
                     </span>
                   </Link>

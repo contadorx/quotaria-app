@@ -5,21 +5,29 @@ import { formatarDataISO, formatarMoeda, LABEL_TIPO_DISTRIBUICAO } from '@/lib/f
 import { createDistribuicao, deleteDistribuicao } from '../actions'
 import { PageHeader, Card, EmptyState, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
+import { FiltroFamiliaChip } from '@/components/filtro-familia-chip'
 
 export default async function DistribuicoesPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; fam?: string }
 }) {
   const supabase = createClient()
 
   const { data: holdings } = await supabase
-    .from('holdings').select('id, razao_social').order('razao_social')
+    .from('holdings').select('id, razao_social, family_id').order('razao_social')
 
-  const { data: distribuicoes } = await supabase
+  const famId = searchParams?.fam
+  const { data: famRow } = famId
+    ? await supabase.from('families').select('name').eq('id', famId).maybeSingle()
+    : { data: null }
+  const idsFam = new Set((holdings ?? []).filter((h) => !famId || h.family_id === famId).map((h) => h.id))
+
+  const { data: distribuicoesRaw } = await supabase
     .from('distribuicoes')
     .select('id, holding_id, competencia, valor_total, tipo, proporcional, deliberacao, data_deliberacao')
     .order('competencia', { ascending: false })
+  const distribuicoes = (distribuicoesRaw ?? []).filter((d) => !famId || idsFam.has(d.holding_id))
 
   const nomePorHolding = new Map((holdings ?? []).map((h) => [h.id, h.razao_social]))
   const temHoldings = (holdings ?? []).length > 0
@@ -32,6 +40,9 @@ export default async function DistribuicoesPage({
         title="Distribuições"
         description="Registro de distribuições de lucros com a deliberação que as sustenta. Desproporcional sem deliberação é flanco — o sistema avisa."
       />
+
+      {famId && <FiltroFamiliaChip nome={famRow?.name ?? 'Família'} base="/app/distribuicoes" />}
+
 
       {!temHoldings ? (
         <EmptyState>
