@@ -523,6 +523,48 @@ export interface Database {
         }
         Relationships: []
       }
+      fechamentos: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string
+          competencia: string
+          distribuicoes_ok: boolean
+          documentos_ok: boolean
+          alertas_ok: boolean
+          alugueis_ok: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id: string
+          competencia: string
+          distribuicoes_ok?: boolean
+          documentos_ok?: boolean
+          alertas_ok?: boolean
+          alugueis_ok?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string
+          competencia?: string
+          distribuicoes_ok?: boolean
+          documentos_ok?: boolean
+          alertas_ok?: boolean
+          alugueis_ok?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
