@@ -1,6 +1,7 @@
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Sidebar, MobileHeader } from '@/components/sidebar'
+import { AppShell } from '@/components/app-shell'
 
 export default async function AppLayout({
   children,
@@ -14,15 +15,11 @@ export default async function AppLayout({
 
   if (!user) redirect('/login')
 
+  const colapsadoInicial = cookies().get('quotaria_sidebar')?.value === 'col'
+
   return (
-    <div className="min-h-[100dvh]">
-      <Sidebar email={user.email ?? ''} />
-      <MobileHeader />
-      <div className="md:pl-[240px]">
-        <main className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
-          {children}
-        </main>
-      </div>
-    </div>
+    <AppShell email={user.email ?? ''} colapsadoInicial={colapsadoInicial}>
+      {children}
+    </AppShell>
   )
 }
