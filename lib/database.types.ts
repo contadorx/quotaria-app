@@ -475,6 +475,8 @@ export interface Database {
           usufruto_extinto_em: string | null
           usufruto_extinto_motivo: string | null
           consolidacao_registrada: boolean
+          adiada_em: string | null
+          adiada_motivo: string | null
           data_prevista: string | null
           status: StatusDoacao
           data_conclusao: string | null
@@ -505,6 +507,8 @@ export interface Database {
           usufruto_extinto_em?: string | null
           usufruto_extinto_motivo?: string | null
           consolidacao_registrada?: boolean
+          adiada_em?: string | null
+          adiada_motivo?: string | null
           data_prevista?: string | null
           status?: StatusDoacao
           data_conclusao?: string | null
@@ -535,6 +539,8 @@ export interface Database {
           usufruto_extinto_em?: string | null
           usufruto_extinto_motivo?: string | null
           consolidacao_registrada?: boolean
+          adiada_em?: string | null
+          adiada_motivo?: string | null
           data_prevista?: string | null
           status?: StatusDoacao
           data_conclusao?: string | null
@@ -601,6 +607,7 @@ export interface Database {
           documentos_ok: boolean
           alertas_ok: boolean
           alugueis_ok: boolean
+          doacoes_ok: boolean
           notes: string | null
           created_at: string
           updated_at: string
@@ -615,6 +622,7 @@ export interface Database {
           documentos_ok?: boolean
           alertas_ok?: boolean
           alugueis_ok?: boolean
+          doacoes_ok?: boolean
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -629,6 +637,7 @@ export interface Database {
           documentos_ok?: boolean
           alertas_ok?: boolean
           alugueis_ok?: boolean
+          doacoes_ok?: boolean
           notes?: string | null
           created_at?: string
           updated_at?: string

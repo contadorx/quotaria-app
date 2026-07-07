@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowRight, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarDataISO, formatarMoeda, LABEL_STATUS_DOACAO, LABEL_MOTIVO_EXTINCAO, CLAUSULAS_DOACAO, EXECUCAO_DOACAO } from '@/lib/format'
-import { createDoacao, changeStatusDoacao, deleteDoacao, updateDoacaoExecucao } from '../actions'
+import { createDoacao, changeStatusDoacao, deleteDoacao, updateDoacaoExecucao, updateDoacaoCronograma } from '../actions'
 import { PageHeader, Card, EmptyState, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
 import { EditDialog } from '@/components/edit-dialog'
@@ -31,6 +31,8 @@ type Doacao = {
   usufruto_extinto_em: string | null
   usufruto_extinto_motivo: string | null
   consolidacao_registrada: boolean
+  adiada_em: string | null
+  adiada_motivo: string | null
 }
 
 export default async function DoacoesPage({
@@ -45,7 +47,7 @@ export default async function DoacoesPage({
   const { data: families } = await supabase.from('families').select('id, name')
   const { data: doacoes } = await supabase
     .from('doacoes')
-    .select('id, holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, com_reserva_usufruto, data_prevista, status, cartorio, minuta_solicitada, guia_itcmd_paga, escritura_lavrada, registro_concluido, clausula_incomunicabilidade, clausula_impenhorabilidade, clausula_inalienabilidade, clausula_reversao, usufruto_extinto_em, usufruto_extinto_motivo, consolidacao_registrada')
+    .select('id, holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, com_reserva_usufruto, data_prevista, status, cartorio, minuta_solicitada, guia_itcmd_paga, escritura_lavrada, registro_concluido, clausula_incomunicabilidade, clausula_impenhorabilidade, clausula_inalienabilidade, clausula_reversao, usufruto_extinto_em, usufruto_extinto_motivo, consolidacao_registrada, adiada_em, adiada_motivo')
     .order('data_prevista', { nullsFirst: false })
 
   const nomeFamilia = new Map((families ?? []).map((f) => [f.id, f.name]))
@@ -62,6 +64,8 @@ export default async function DoacoesPage({
   const emCartorio = lista.filter((d) => d.status === 'em_cartorio')
   const concluidas = lista.filter((d) => d.status === 'concluida')
   const itcmdTotal = lista.reduce((a, d) => a + Number(d.itcmd_estimado ?? 0), 0)
+  const hojeISO = new Date().toISOString().slice(0, 10)
+  const atrasadas = lista.filter((d) => d.status === 'planejada' && d.data_prevista && d.data_prevista < hojeISO && !d.adiada_em)
   const consolidacoesPendentes = lista.filter(
     (d) => d.usufruto_extinto_em && !d.consolidacao_registrada,
   )
@@ -78,6 +82,17 @@ export default async function DoacoesPage({
         title="Doações"
         description="Cronograma de doação de quotas em vida — o ritmo que realiza a economia de ITCMD e inventário prometida na proposta."
       />
+
+      {atrasadas.length > 0 && (
+        <div className="mb-6 flex items-start gap-2 rounded-xl2 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <span>
+            <strong className="font-semibold">{atrasadas.length} doação(ões) planejada(s) com data vencida.</strong> O
+            ROI prometido depende do cronograma — reagende ou, se a família decidiu esperar, registre o
+            adiamento no botão <em>Cronograma</em> (o alerta some e a decisão fica documentada).
+          </span>
+        </div>
+      )}
 
       {consolidacoesPendentes.length > 0 && (
         <div className="mb-6 flex items-start gap-2 rounded-xl2 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -245,6 +260,14 @@ function Grupo({
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
                   <span className="num">{d.quantidade_quotas} quotas</span>
                   <span>· {nomePorHolding.get(d.holding_id) ?? 'holding'}</span>
+                  {d.status === 'planejada' && d.data_prevista && d.data_prevista < new Date().toISOString().slice(0, 10) && !d.adiada_em && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">atrasada</span>
+                  )}
+                  {d.status === 'planejada' && d.adiada_em && (
+                    <span title={d.adiada_motivo ?? undefined} className="rounded-full bg-ink-soft/10 px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+                      adiada por decisão · {formatarDataISO(d.adiada_em)}
+                    </span>
+                  )}
                   {d.com_reserva_usufruto && !d.usufruto_extinto_em && <Pill>usufruto vigente</Pill>}
                   {d.usufruto_extinto_em && !d.consolidacao_registrada && (
                     <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
@@ -267,6 +290,30 @@ function Grupo({
                 {d.valor_estimado != null && <div className="num text-ink">{formatarMoeda(Number(d.valor_estimado))}</div>}
                 {d.itcmd_estimado != null && <div className="num text-xs text-ink-soft">ITCMD {formatarMoeda(Number(d.itcmd_estimado))}</div>}
               </div>
+              {d.status === 'planejada' && (
+                <EditDialog title="Cronograma da doação" label="Cronograma" compact>
+                  <form className="space-y-4">
+                    <input type="hidden" name="id" value={d.id} />
+                    <input type="hidden" name="voltar" value="/app/doacoes" />
+                    <div>
+                      <label className="block text-xs font-medium text-ink-muted">Reagendar para</label>
+                      <input name="nova_data" type="date" className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" />
+                      <p className="mt-1 text-[11px] text-ink-soft">Preencher a nova data limpa qualquer adiamento registrado.</p>
+                    </div>
+                    <div className="rounded-lg border border-line bg-surface/60 p-3">
+                      <label className="flex items-start gap-2 text-sm text-ink">
+                        <input type="checkbox" name="adiar" defaultChecked={!!d.adiada_em} className="mt-0.5 h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+                        <span>
+                          Adiar por decisão (sem nova data)
+                          <span className="block text-[11px] font-normal text-ink-soft">O alerta some e a decisão fica registrada — sem punição, com prova de diligência.</span>
+                        </span>
+                      </label>
+                      <input name="adiada_motivo" placeholder="Motivo (ex.: decisão da família — aguardar venda do imóvel)" defaultValue={d.adiada_motivo ?? ''} className="mt-2 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" />
+                    </div>
+                    <div className="flex justify-end"><SubmitButton action={updateDoacaoCronograma}>Salvar cronograma</SubmitButton></div>
+                  </form>
+                </EditDialog>
+              )}
               <EditDialog title="Operação da doação" label="Operação">
                 <form className="space-y-4">
                   <input type="hidden" name="id" value={d.id} />

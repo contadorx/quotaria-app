@@ -12,6 +12,7 @@ const ITENS: { campo: string; label: string }[] = [
   { campo: 'documentos_ok', label: 'Documentos do mês arquivados no cofre' },
   { campo: 'alertas_ok', label: 'Alertas e prazos do mês tratados' },
   { campo: 'alugueis_ok', label: 'Aluguéis marcados para regime de caixa' },
+  { campo: 'doacoes_ok', label: 'Cronograma de doações em dia' },
 ]
 
 type Fechamento = {
@@ -20,15 +21,16 @@ type Fechamento = {
   documentos_ok: boolean
   alertas_ok: boolean
   alugueis_ok: boolean
+  doacoes_ok: boolean
   notes: string | null
 }
 
 function semaforo(f: Fechamento | undefined) {
   if (!f) return { cor: 'off', label: 'Não iniciado', dot: 'bg-ink-soft/40' }
-  const n = [f.distribuicoes_ok, f.documentos_ok, f.alertas_ok, f.alugueis_ok].filter(Boolean).length
-  if (n === 4) return { cor: 'emerald', label: 'Em dia', dot: 'bg-emerald-500' }
-  if (n >= 2) return { cor: 'gold', label: `${n}/4 · pendências`, dot: 'bg-gold' }
-  return { cor: 'red', label: `${n}/4 · atenção`, dot: 'bg-red-500' }
+  const n = [f.distribuicoes_ok, f.documentos_ok, f.alertas_ok, f.alugueis_ok, f.doacoes_ok].filter(Boolean).length
+  if (n === 5) return { cor: 'emerald', label: 'Em dia', dot: 'bg-emerald-500' }
+  if (n >= 3) return { cor: 'gold', label: `${n}/5 · pendências`, dot: 'bg-gold' }
+  return { cor: 'red', label: `${n}/5 · atenção`, dot: 'bg-red-500' }
 }
 
 export default async function MesPage({
@@ -50,7 +52,7 @@ export default async function MesPage({
   const supabase = createClient()
   const { data: holdings } = await supabase.from('holdings').select('id, razao_social').order('razao_social')
   const { data: fechs } = await supabase
-    .from('fechamentos').select('holding_id, distribuicoes_ok, documentos_ok, alertas_ok, alugueis_ok, notes')
+    .from('fechamentos').select('holding_id, distribuicoes_ok, documentos_ok, alertas_ok, alugueis_ok, doacoes_ok, notes')
     .eq('competencia', competencia)
 
   // auto-detecção: sinais dos lançamentos reais do mês
@@ -62,6 +64,17 @@ export default async function MesPage({
   )
   const { data: evPend } = await supabase.from('eventos').select('holding_id, data_prevista').eq('status', 'pendente')
   const comVencido = new Set((evPend ?? []).filter((e) => e.data_prevista < hojeISO && e.holding_id).map((e) => e.holding_id))
+
+  // cronograma de doações: avisa, não pune — adiamento deliberado silencia
+  const { data: doaPlan } = await supabase
+    .from('doacoes').select('holding_id, data_prevista, adiada_em').eq('status', 'planejada')
+  const doacoesInfo = (hid: string) => {
+    const da = (doaPlan ?? []).filter((d) => d.holding_id === hid)
+    return {
+      atrasadas: da.filter((d) => d.data_prevista && d.data_prevista < hojeISO && !d.adiada_em).length,
+      adiadas: da.filter((d) => d.adiada_em).length,
+    }
+  }
 
   const porHolding = new Map((fechs ?? []).map((f) => [f.holding_id, f as Fechamento]))
   const lista = (holdings ?? []).map((h) => ({ h, f: porHolding.get(h.id), s: semaforo(porHolding.get(h.id)) }))
@@ -75,6 +88,7 @@ export default async function MesPage({
       documentos_ok: comDoc.has(hid),
       alertas_ok: !comVencido.has(hid),
       alugueis_ok: false,
+      doacoes_ok: doacoesInfo(hid).atrasadas === 0,
     }
   }
 
@@ -137,7 +151,20 @@ export default async function MesPage({
                             defaultChecked={f ? (f[it.campo as keyof Fechamento] as boolean) : sug[it.campo]}
                             className="mt-0.5 h-4 w-4 rounded border-line text-navy focus:ring-gold"
                           />
-                          {it.label}
+                          <span>
+                            {it.label}
+                            {it.campo === 'doacoes_ok' && doacoesInfo(h.id).atrasadas > 0 && (
+                              <span className="mt-0.5 block text-xs font-medium text-amber-700">
+                                {doacoesInfo(h.id).atrasadas} doação(ões) planejada(s) vencida(s) sem decisão registrada —{' '}
+                                <Link href="/app/doacoes" className="underline underline-offset-2">reagende ou registre o adiamento</Link>. Você pode marcar mesmo assim.
+                              </span>
+                            )}
+                            {it.campo === 'doacoes_ok' && doacoesInfo(h.id).atrasadas === 0 && doacoesInfo(h.id).adiadas > 0 && (
+                              <span className="mt-0.5 block text-xs text-ink-soft">
+                                {doacoesInfo(h.id).adiadas} adiada(s) por decisão registrada.
+                              </span>
+                            )}
+                          </span>
                         </label>
                       ))}
                     </div>

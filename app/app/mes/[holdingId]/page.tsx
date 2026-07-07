@@ -17,6 +17,7 @@ const ITENS: { campo: string; label: string }[] = [
   { campo: 'documentos_ok', label: 'Documentos do mês arquivados' },
   { campo: 'alertas_ok', label: 'Alertas e prazos tratados' },
   { campo: 'alugueis_ok', label: 'Aluguéis em regime de caixa' },
+  { campo: 'doacoes_ok', label: 'Cronograma de doações em dia' },
 ]
 
 export default async function ExtratoMensal({
@@ -56,7 +57,7 @@ export default async function ExtratoMensal({
 
   const { data: fechamento } = await supabase
     .from('fechamentos')
-    .select('distribuicoes_ok, documentos_ok, alertas_ok, alugueis_ok, notes')
+    .select('distribuicoes_ok, documentos_ok, alertas_ok, alugueis_ok, doacoes_ok, notes')
     .eq('holding_id', params.holdingId).eq('competencia', competencia).maybeSingle()
 
   const { data: distTodas } = await supabase
@@ -80,11 +81,11 @@ export default async function ExtratoMensal({
     .sort((a, b) => a.data_prevista.localeCompare(b.data_prevista))[0]
 
   const okCount = fechamento
-    ? [fechamento.distribuicoes_ok, fechamento.documentos_ok, fechamento.alertas_ok, fechamento.alugueis_ok].filter(Boolean).length
+    ? [fechamento.distribuicoes_ok, fechamento.documentos_ok, fechamento.alertas_ok, fechamento.alugueis_ok, fechamento.doacoes_ok].filter(Boolean).length
     : 0
   const status = !fechamento
     ? { label: 'Mês não fechado', cls: 'bg-ink-soft/10 text-ink-muted' }
-    : okCount === 4
+    : okCount === 5
       ? { label: 'Em dia', cls: 'bg-emerald-50 text-emerald-700' }
       : { label: 'Em andamento', cls: 'bg-amber-50 text-amber-700' }
 

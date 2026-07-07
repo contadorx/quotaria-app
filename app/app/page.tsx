@@ -18,13 +18,14 @@ export default async function AppHome({
   const { data: bens } = await supabase.from('bens').select('valor_contabil, valor_mercado')
   const { data: eventos } = await supabase.from('eventos').select('data_prevista, status').eq('status', 'pendente')
   const { data: doacoes } = await supabase.from('doacoes').select('itcmd_estimado, status').eq('status', 'concluida')
+  const { data: doaPlan } = await supabase.from('doacoes').select('data_prevista, adiada_em').eq('status', 'planejada')
 
   const hoje = new Date().toISOString().slice(0, 10)
   const hoje30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10)
   const mm = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`
   const { data: fechs } = await supabase
     .from('fechamentos')
-    .select('distribuicoes_ok, documentos_ok, alertas_ok, alugueis_ok')
+    .select('distribuicoes_ok, documentos_ok, alertas_ok, alugueis_ok, doacoes_ok')
     .eq('competencia', mm)
 
   const nFamilias = (families ?? []).length
@@ -32,7 +33,8 @@ export default async function AppHome({
   const patrimonio = (bens ?? []).reduce((a, b) => a + Number(b.valor_mercado ?? b.valor_contabil ?? 0), 0)
   const atrasados = (eventos ?? []).filter((e) => e.data_prevista < hoje)
   const proximos = (eventos ?? []).filter((e) => e.data_prevista >= hoje && e.data_prevista <= hoje30)
-  const emDiaMes = (fechs ?? []).filter((f) => f.distribuicoes_ok && f.documentos_ok && f.alertas_ok && f.alugueis_ok).length
+  const emDiaMes = (fechs ?? []).filter((f) => f.distribuicoes_ok && f.documentos_ok && f.alertas_ok && f.alugueis_ok && f.doacoes_ok).length
+  const doacoesAtrasadas = (doaPlan ?? []).filter((d) => d.data_prevista && d.data_prevista < hoje && !d.adiada_em).length
   const itcmdEconomizado = (doacoes ?? []).reduce((a, d) => a + Number(d.itcmd_estimado ?? 0), 0)
 
   return (
@@ -54,7 +56,7 @@ export default async function AppHome({
             <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Alertas</h2>
             <Link href="/app/calendario" className="text-xs text-ink-soft transition hover:text-navy">Calendário →</Link>
           </div>
-          {atrasados.length === 0 && proximos.length === 0 ? (
+          {atrasados.length === 0 && proximos.length === 0 && doacoesAtrasadas === 0 ? (
             <p className="mt-3 text-sm text-ink-soft">Nada vencido nem nos próximos 30 dias.</p>
           ) : (
             <div className="mt-3 flex flex-wrap gap-3 text-sm">
@@ -67,6 +69,11 @@ export default async function AppHome({
                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-cream px-3 py-2 font-medium text-navy">
                   {proximos.length} nos próximos 30 dias
                 </span>
+              )}
+              {doacoesAtrasadas > 0 && (
+                <Link href="/app/doacoes" className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 font-medium text-red-700 transition hover:bg-red-100">
+                  <AlertTriangle size={15} /> {doacoesAtrasadas} doaç{doacoesAtrasadas > 1 ? 'ões' : 'ão'} do cronograma atrasada{doacoesAtrasadas > 1 ? 's' : ''}
+                </Link>
               )}
             </div>
           )}

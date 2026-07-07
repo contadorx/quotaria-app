@@ -553,6 +553,7 @@ export async function salvarFechamento(formData: FormData) {
       documentos_ok: formData.get('documentos_ok') === 'on',
       alertas_ok: formData.get('alertas_ok') === 'on',
       alugueis_ok: formData.get('alugueis_ok') === 'on',
+      doacoes_ok: formData.get('doacoes_ok') === 'on',
       notes: orNull(s(formData, 'notes')),
     },
     { onConflict: 'holding_id,competencia' },
@@ -866,6 +867,31 @@ export async function updateDoacaoExecucao(formData: FormData) {
     usufruto_extinto_motivo: orNull(s(formData, 'usufruto_extinto_motivo')),
     consolidacao_registrada: on('consolidacao_registrada'),
   }).eq('id', id)
+  if (error) redirect(`${voltar}?error=` + encodeURIComponent(error.message))
+  revalidatePath(voltar)
+  redirect(voltar)
+}
+
+// -------------------------- Doações — cronograma (reagendar / adiar por decisão) --------------------------
+export async function updateDoacaoCronograma(formData: FormData) {
+  const id = s(formData, 'id')
+  const voltar = s(formData, 'voltar') || '/app/doacoes'
+  if (!id) redirect(voltar)
+  const novaData = s(formData, 'nova_data')
+  const adiar = formData.get('adiar') === 'on'
+  const supabase = createClient()
+  const payload: { data_prevista?: string; adiada_em?: string | null; adiada_motivo?: string | null } = {}
+  if (novaData) {
+    payload.data_prevista = novaData
+    payload.adiada_em = null
+    payload.adiada_motivo = null
+  } else if (adiar) {
+    payload.adiada_em = new Date().toISOString().slice(0, 10)
+    payload.adiada_motivo = orNull(s(formData, 'adiada_motivo'))
+  } else {
+    redirect(voltar)
+  }
+  const { error } = await supabase.from('doacoes').update(payload).eq('id', id)
   if (error) redirect(`${voltar}?error=` + encodeURIComponent(error.message))
   revalidatePath(voltar)
   redirect(voltar)

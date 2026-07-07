@@ -31,6 +31,8 @@ type Doacao = {
   usufruto_extinto_em: string | null
   usufruto_extinto_motivo: string | null
   consolidacao_registrada: boolean
+  adiada_em: string | null
+  adiada_motivo: string | null
 }
 
 const DOT: Record<string, string> = {
@@ -65,7 +67,7 @@ export default async function SucessaoFamiliaPage({
   const doacoes: Doacao[] = holdingIds.length
     ? ((await supabase
         .from('doacoes')
-        .select('id, holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, com_reserva_usufruto, data_prevista, data_conclusao, status, minuta_solicitada, guia_itcmd_paga, escritura_lavrada, registro_concluido, clausula_incomunicabilidade, clausula_impenhorabilidade, clausula_inalienabilidade, clausula_reversao, usufruto_extinto_em, usufruto_extinto_motivo, consolidacao_registrada')
+        .select('id, holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, com_reserva_usufruto, data_prevista, data_conclusao, status, minuta_solicitada, guia_itcmd_paga, escritura_lavrada, registro_concluido, clausula_incomunicabilidade, clausula_impenhorabilidade, clausula_inalienabilidade, clausula_reversao, usufruto_extinto_em, usufruto_extinto_motivo, consolidacao_registrada, adiada_em, adiada_motivo')
         .in('holding_id', holdingIds)).data as Doacao[] | null) ?? []
     : []
 
@@ -165,6 +167,12 @@ export default async function SucessaoFamiliaPage({
                     <span>execução {exec}/4</span>
                     {d.usufruto_extinto_em && !d.consolidacao_registrada && (
                       <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">consolidação pendente</span>
+                    )}
+                    {d.status === 'planejada' && d.data_prevista && d.data_prevista < new Date().toISOString().slice(0, 10) && !d.adiada_em && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">atrasada</span>
+                    )}
+                    {d.status === 'planejada' && d.adiada_em && (
+                      <span title={d.adiada_motivo ?? undefined} className="rounded-full bg-ink-soft/10 px-2 py-0.5 text-[11px] font-medium text-ink-muted">adiada por decisão</span>
                     )}
                   </div>
                 </li>

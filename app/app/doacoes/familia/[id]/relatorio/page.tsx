@@ -43,7 +43,7 @@ export default async function RelatorioDoacoes({
   const doacoes = holdingIds.length
     ? (await supabase
         .from('doacoes')
-        .select('holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, data_conclusao, data_prevista, status, cartorio, com_reserva_usufruto, clausula_incomunicabilidade, clausula_impenhorabilidade, clausula_inalienabilidade, clausula_reversao, minuta_solicitada, guia_itcmd_paga, escritura_lavrada, registro_concluido')
+        .select('holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, data_conclusao, data_prevista, status, cartorio, com_reserva_usufruto, clausula_incomunicabilidade, clausula_impenhorabilidade, clausula_inalienabilidade, clausula_reversao, minuta_solicitada, guia_itcmd_paga, escritura_lavrada, registro_concluido, adiada_em, adiada_motivo')
         .in('holding_id', holdingIds)).data ?? []
     : []
 
@@ -161,7 +161,7 @@ export default async function RelatorioDoacoes({
                 <li key={i} className="flex justify-between border-b border-line/60 py-1.5">
                   <span className="text-ink">
                     {formatarDataISO(d.data_prevista)} · {nomeSocio.get(d.doador_id ?? '') ?? '—'} → {nomeSocio.get(d.donatario_id ?? '') ?? '—'} · {d.quantidade_quotas} quotas
-                    <span className="text-ink-soft"> ({d.status === 'em_cartorio' ? 'em cartório' : 'planejada'})</span>
+                    <span className="text-ink-soft"> ({d.status === 'em_cartorio' ? 'em cartório' : d.adiada_em ? 'adiada por decisão da família' : 'planejada'})</span>
                   </span>
                   <span className="num text-ink-muted">{formatarMoeda(Number(d.valor_estimado ?? 0))}</span>
                 </li>
