@@ -535,3 +535,30 @@ export async function deleteDocumento(formData: FormData) {
   revalidatePath('/app/documentos')
   redirect('/app/documentos')
 }
+
+// -------------------------- O Mês da Holding (fechamento) --------------------------
+export async function salvarFechamento(formData: FormData) {
+  const holdingId = s(formData, 'holding_id')
+  const competencia = s(formData, 'competencia') // YYYY-MM-01
+  if (!holdingId || !competencia) redirect('/app/mes')
+
+  const [ano, mes] = competencia.split('-')
+  const supabase = createClient()
+  const { error } = await supabase.from('fechamentos').upsert(
+    {
+      holding_id: holdingId,
+      competencia,
+      distribuicoes_ok: formData.get('distribuicoes_ok') === 'on',
+      documentos_ok: formData.get('documentos_ok') === 'on',
+      alertas_ok: formData.get('alertas_ok') === 'on',
+      alugueis_ok: formData.get('alugueis_ok') === 'on',
+      notes: orNull(s(formData, 'notes')),
+    },
+    { onConflict: 'holding_id,competencia' },
+  )
+  if (error) {
+    redirect(`/app/mes?ano=${ano}&mes=${mes}&error=` + encodeURIComponent(error.message))
+  }
+  revalidatePath('/app/mes')
+  redirect(`/app/mes?ano=${ano}&mes=${mes}`)
+}

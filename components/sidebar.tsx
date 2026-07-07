@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   Users,
   CalendarClock,
+  ClipboardCheck,
   ArrowLeftRight,
   Gift,
   FolderClosed,
@@ -29,6 +30,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     label: 'Calendário',
     icon: CalendarClock,
     match: (p) => p.startsWith('/app/calendario'),
+  },
+  {
+    href: '/app/mes',
+    label: 'Mês da Holding',
+    icon: ClipboardCheck,
+    match: (p) => p.startsWith('/app/mes'),
   },
   {
     href: '/app/distribuicoes',
