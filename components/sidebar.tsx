@@ -43,6 +43,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     match: (p) => p.startsWith('/app/doacoes'),
   },
   {
+    href: '/app/documentos',
+    label: 'Documentos',
+    icon: FolderClosed,
+    match: (p) => p.startsWith('/app/documentos'),
+  },
+  {
     href: '/app/relatorios',
     label: 'Relatórios',
     icon: FileText,
@@ -50,9 +56,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
   },
 ]
 
-const EM_BREVE: { label: string; icon: LucideIcon }[] = [
-  { label: 'Documentos', icon: FolderClosed },
-]
+const EM_BREVE: { label: string; icon: LucideIcon }[] = []
 
 export function Sidebar({
   email,
@@ -110,17 +114,20 @@ export function Sidebar({
           <NavItem key={href} href={href} label={label} Icon={Icon} active={match(pathname)} colapsado={colapsado} />
         ))}
 
-        {!colapsado ? (
-          <p className="px-3 pb-1 pt-6 text-[10px] font-semibold uppercase tracking-wider text-rail-muted/60">
-            Em breve
-          </p>
-        ) : (
-          <div className="my-3 h-px w-8 bg-white/10" />
+        {EM_BREVE.length > 0 && (
+          <>
+            {!colapsado ? (
+              <p className="px-3 pb-1 pt-6 text-[10px] font-semibold uppercase tracking-wider text-rail-muted/60">
+                Em breve
+              </p>
+            ) : (
+              <div className="my-3 h-px w-8 bg-white/10" />
+            )}
+            {EM_BREVE.map(({ label, icon: Icon }) => (
+              <DisabledItem key={label} label={label} Icon={Icon} colapsado={colapsado} />
+            ))}
+          </>
         )}
-
-        {EM_BREVE.map(({ label, icon: Icon }) => (
-          <DisabledItem key={label} label={label} Icon={Icon} colapsado={colapsado} />
-        ))}
       </nav>
 
       {/* rodapé: usuário + sair */}

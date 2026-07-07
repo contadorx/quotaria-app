@@ -17,6 +17,7 @@ import type {
   StatusEvento,
   TipoDistribuicao,
   StatusDoacao,
+  TipoDocumento,
 } from '@/lib/database.types'
 
 export async function signout() {
@@ -497,4 +498,40 @@ export async function deleteDoacao(formData: FormData) {
   await supabase.from('doacoes').delete().eq('id', id)
   revalidatePath('/app/doacoes')
   redirect('/app/doacoes')
+}
+
+// -------------------------- Cofre documental --------------------------
+export async function registrarDocumento(dados: {
+  nome: string
+  tipo: string
+  holding_id: string | null
+  storage_path: string
+  tamanho_bytes: number
+  competencia: string | null
+}): Promise<{ ok?: true; error?: string }> {
+  const supabase = createClient()
+  const { error } = await supabase.from('documentos').insert({
+    nome: dados.nome,
+    tipo: dados.tipo as TipoDocumento,
+    holding_id: dados.holding_id,
+    storage_path: dados.storage_path,
+    tamanho_bytes: dados.tamanho_bytes,
+    competencia: dados.competencia,
+  })
+  if (error) return { error: error.message }
+  revalidatePath('/app/documentos')
+  return { ok: true }
+}
+
+export async function deleteDocumento(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/documentos')
+  const supabase = createClient()
+  const { data: doc } = await supabase.from('documentos').select('storage_path').eq('id', id).single()
+  if (doc?.storage_path) {
+    await supabase.storage.from('documentos').remove([doc.storage_path])
+  }
+  await supabase.from('documentos').delete().eq('id', id)
+  revalidatePath('/app/documentos')
+  redirect('/app/documentos')
 }

@@ -58,6 +58,15 @@ export type TipoDistribuicao = 'lucros' | 'jcp' | 'outro'
 
 export type StatusDoacao = 'planejada' | 'em_cartorio' | 'concluida'
 
+export type TipoDocumento =
+  | 'ata'
+  | 'contrato_social'
+  | 'acordo_quotistas'
+  | 'doacao'
+  | 'laudo'
+  | 'matricula'
+  | 'outro'
+
 export interface Database {
   public: {
     Tables: {
@@ -466,6 +475,48 @@ export interface Database {
           status?: StatusDoacao
           data_conclusao?: string | null
           cartorio?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documentos: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string | null
+          nome: string
+          tipo: TipoDocumento
+          storage_path: string
+          tamanho_bytes: number | null
+          competencia: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string | null
+          nome: string
+          tipo?: TipoDocumento
+          storage_path: string
+          tamanho_bytes?: number | null
+          competencia?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string | null
+          nome?: string
+          tipo?: TipoDocumento
+          storage_path?: string
+          tamanho_bytes?: number | null
+          competencia?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string

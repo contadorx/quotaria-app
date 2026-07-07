@@ -99,3 +99,20 @@ export const LABEL_STATUS_DOACAO: Record<string, string> = {
   em_cartorio: 'Em cartório',
   concluida: 'Concluída',
 }
+
+export const LABEL_TIPO_DOCUMENTO: Record<string, string> = {
+  ata: 'Ata',
+  contrato_social: 'Contrato social',
+  acordo_quotistas: 'Acordo de quotistas',
+  doacao: 'Doação',
+  laudo: 'Laudo',
+  matricula: 'Matrícula',
+  outro: 'Outro',
+}
+
+export function formatarTamanho(bytes: number | null): string {
+  if (!bytes) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
