@@ -54,6 +54,8 @@ export type TipoEvento =
   | 'outro'
 export type StatusEvento = 'pendente' | 'concluido'
 
+export type TipoDistribuicao = 'lucros' | 'jcp' | 'outro'
+
 export interface Database {
   public: {
     Tables: {
@@ -360,6 +362,51 @@ export interface Database {
           data_prevista?: string
           status?: StatusEvento
           concluido_em?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      distribuicoes: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string
+          competencia: string
+          valor_total: number
+          tipo: TipoDistribuicao
+          proporcional: boolean
+          deliberacao: string | null
+          data_deliberacao: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id: string
+          competencia: string
+          valor_total?: number
+          tipo?: TipoDistribuicao
+          proporcional?: boolean
+          deliberacao?: string | null
+          data_deliberacao?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string
+          competencia?: string
+          valor_total?: number
+          tipo?: TipoDistribuicao
+          proporcional?: boolean
+          deliberacao?: string | null
+          data_deliberacao?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string

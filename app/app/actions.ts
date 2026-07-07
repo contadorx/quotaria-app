@@ -15,6 +15,7 @@ import type {
   StatusHolding,
   TipoEvento,
   StatusEvento,
+  TipoDistribuicao,
 } from '@/lib/database.types'
 
 export async function signout() {
@@ -403,4 +404,40 @@ export async function seedMarcosReforma() {
   )
   revalidatePath('/app/calendario')
   redirect('/app/calendario')
+}
+
+// -------------------------- Distribuições --------------------------
+export async function createDistribuicao(formData: FormData) {
+  const holdingId = s(formData, 'holding_id')
+  const competencia = s(formData, 'competencia')
+  if (!holdingId) {
+    redirect('/app/distribuicoes?error=' + encodeURIComponent('Selecione a holding.'))
+  }
+  if (!competencia) {
+    redirect('/app/distribuicoes?error=' + encodeURIComponent('Informe a competência.'))
+  }
+  const valorRaw = s(formData, 'valor_total')
+  const supabase = createClient()
+  const { error } = await supabase.from('distribuicoes').insert({
+    holding_id: holdingId,
+    competencia,
+    valor_total: valorRaw === '' ? 0 : Number(valorRaw),
+    tipo: (s(formData, 'tipo') || 'lucros') as TipoDistribuicao,
+    proporcional: formData.get('proporcional') === 'on',
+    deliberacao: orNull(s(formData, 'deliberacao')),
+    data_deliberacao: orNull(s(formData, 'data_deliberacao')),
+    notes: orNull(s(formData, 'notes')),
+  })
+  if (error) redirect('/app/distribuicoes?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/distribuicoes')
+  redirect('/app/distribuicoes')
+}
+
+export async function deleteDistribuicao(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/distribuicoes')
+  const supabase = createClient()
+  await supabase.from('distribuicoes').delete().eq('id', id)
+  revalidatePath('/app/distribuicoes')
+  redirect('/app/distribuicoes')
 }

@@ -29,10 +29,15 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     icon: CalendarClock,
     match: (p) => p.startsWith('/app/calendario'),
   },
+  {
+    href: '/app/distribuicoes',
+    label: 'Distribuições',
+    icon: ArrowLeftRight,
+    match: (p) => p.startsWith('/app/distribuicoes'),
+  },
 ]
 
 const EM_BREVE: { label: string; icon: LucideIcon }[] = [
-  { label: 'Distribuições', icon: ArrowLeftRight },
   { label: 'Documentos', icon: FolderClosed },
   { label: 'Relatórios', icon: FileText },
 ]

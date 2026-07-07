@@ -87,3 +87,9 @@ export function formatarDataISO(iso: string | null): string {
   const [a, m, d] = iso.slice(0, 10).split('-')
   return `${d}/${m}/${a}`
 }
+
+export const LABEL_TIPO_DISTRIBUICAO: Record<string, string> = {
+  lucros: 'Lucros/dividendos',
+  jcp: 'JCP',
+  outro: 'Outro',
+}
