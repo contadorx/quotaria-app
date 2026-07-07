@@ -1,0 +1,332 @@
+// -----------------------------------------------------------------------------
+// Tipos do banco — espelham a migration 0001_cadastro_multi_holding.sql.
+// A fonte da verdade é o schema no Supabase. Para regenerar automaticamente:
+//   supabase gen types typescript --project-id SEU_ID > lib/database.types.ts
+// -----------------------------------------------------------------------------
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+// Domínios (campos text + CHECK no banco, tipados aqui para autocomplete)
+export type TipoSocietario = 'ltda' | 'sa'
+export type StatusHolding = 'ativa' | 'em_constituicao' | 'inativa'
+export type PapelFamiliar =
+  | 'patriarca'
+  | 'matriarca'
+  | 'conjuge'
+  | 'filho'
+  | 'neto'
+  | 'outro'
+export type EstadoCivil =
+  | 'solteiro'
+  | 'casado'
+  | 'uniao_estavel'
+  | 'divorciado'
+  | 'viuvo'
+export type RegimeBens =
+  | 'comunhao_parcial'
+  | 'comunhao_universal'
+  | 'separacao_total'
+  | 'participacao_final'
+  | 'nao_aplicavel'
+export type TipoDireito = 'plena' | 'nua_propriedade' | 'usufruto'
+export type ClasseQuota = 'ordinaria' | 'preferencial'
+export type TipoBem = 'imovel' | 'participacao' | 'veiculo' | 'aplicacao' | 'outro'
+export type TipoClausula =
+  | 'incomunicabilidade'
+  | 'impenhorabilidade'
+  | 'inalienabilidade'
+  | 'reversao'
+  | 'usufruto_vitalicio'
+  | 'outra'
+
+export interface Database {
+  public: {
+    Tables: {
+      families: {
+        Row: {
+          id: string
+          accountant_id: string
+          name: string
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          name: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          name?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      holdings: {
+        Row: {
+          id: string
+          accountant_id: string
+          family_id: string
+          razao_social: string
+          nome_fantasia: string | null
+          cnpj: string | null
+          tipo_societario: TipoSocietario
+          data_constituicao: string | null
+          capital_social: number | null
+          status: StatusHolding
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          family_id: string
+          razao_social: string
+          nome_fantasia?: string | null
+          cnpj?: string | null
+          tipo_societario?: TipoSocietario
+          data_constituicao?: string | null
+          capital_social?: number | null
+          status?: StatusHolding
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          family_id?: string
+          razao_social?: string
+          nome_fantasia?: string | null
+          cnpj?: string | null
+          tipo_societario?: TipoSocietario
+          data_constituicao?: string | null
+          capital_social?: number | null
+          status?: StatusHolding
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      socios: {
+        Row: {
+          id: string
+          accountant_id: string
+          family_id: string
+          nome: string
+          cpf: string | null
+          data_nascimento: string | null
+          papel_familiar: PapelFamiliar | null
+          estado_civil: EstadoCivil | null
+          regime_bens: RegimeBens | null
+          email: string | null
+          telefone: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          family_id: string
+          nome: string
+          cpf?: string | null
+          data_nascimento?: string | null
+          papel_familiar?: PapelFamiliar | null
+          estado_civil?: EstadoCivil | null
+          regime_bens?: RegimeBens | null
+          email?: string | null
+          telefone?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          family_id?: string
+          nome?: string
+          cpf?: string | null
+          data_nascimento?: string | null
+          papel_familiar?: PapelFamiliar | null
+          estado_civil?: EstadoCivil | null
+          regime_bens?: RegimeBens | null
+          email?: string | null
+          telefone?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quotas: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string
+          socio_id: string
+          quantidade: number
+          percentual: number | null
+          valor_nominal: number | null
+          tipo_direito: TipoDireito
+          classe: ClasseQuota | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id: string
+          socio_id: string
+          quantidade?: number
+          percentual?: number | null
+          valor_nominal?: number | null
+          tipo_direito?: TipoDireito
+          classe?: ClasseQuota | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string
+          socio_id?: string
+          quantidade?: number
+          percentual?: number | null
+          valor_nominal?: number | null
+          tipo_direito?: TipoDireito
+          classe?: ClasseQuota | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bens: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string
+          tipo: TipoBem
+          descricao: string
+          valor_contabil: number | null
+          valor_mercado: number | null
+          matricula: string | null
+          municipio_uf: string | null
+          data_aquisicao: string | null
+          gera_receita: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id: string
+          tipo?: TipoBem
+          descricao: string
+          valor_contabil?: number | null
+          valor_mercado?: number | null
+          matricula?: string | null
+          municipio_uf?: string | null
+          data_aquisicao?: string | null
+          gera_receita?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string
+          tipo?: TipoBem
+          descricao?: string
+          valor_contabil?: number | null
+          valor_mercado?: number | null
+          matricula?: string | null
+          municipio_uf?: string | null
+          data_aquisicao?: string | null
+          gera_receita?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clausulas: {
+        Row: {
+          id: string
+          accountant_id: string
+          tipo: TipoClausula
+          holding_id: string | null
+          quota_id: string | null
+          bem_id: string | null
+          descricao: string | null
+          registrada_em: string | null
+          responsavel: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          tipo: TipoClausula
+          holding_id?: string | null
+          quota_id?: string | null
+          bem_id?: string | null
+          descricao?: string | null
+          registrada_em?: string | null
+          responsavel?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          tipo?: TipoClausula
+          holding_id?: string | null
+          quota_id?: string | null
+          bem_id?: string | null
+          descricao?: string | null
+          registrada_em?: string | null
+          responsavel?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}

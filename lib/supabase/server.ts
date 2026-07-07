@@ -1,10 +1,11 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import type { Database } from '@/lib/database.types'
 
 export function createClient() {
   const cookieStore = cookies()
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -21,7 +22,7 @@ export function createClient() {
             )
           } catch {
             // Chamado de um Server Component — ignoravel.
-            // A renovacao de sessao fica a cargo do middleware (feature de auth).
+            // A renovacao de sessao fica a cargo do middleware.
           }
         },
       },
