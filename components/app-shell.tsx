@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Sidebar, MobileHeader } from '@/components/sidebar'
+import { BuscaGlobal } from '@/components/busca-global'
 
 export function AppShell({
   email,
@@ -32,6 +33,11 @@ export function AppShell({
       <Sidebar email={email} orgNome={orgNome} colapsado={colapsado} onToggle={toggle} superAdmin={superAdmin} />
       <MobileHeader />
       <div className={`transition-all duration-200 ${colapsado ? 'md:pl-[72px]' : 'md:pl-[240px]'}`}>
+        <div className="no-print sticky top-0 z-30 hidden border-b border-line bg-cream/80 backdrop-blur md:block">
+          <div className="mx-auto flex max-w-[1100px] items-center justify-end px-8 py-2.5">
+            <BuscaGlobal />
+          </div>
+        </div>
         <main className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
           {children}
         </main>
