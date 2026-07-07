@@ -10,6 +10,7 @@ import {
   LABEL_TIPO_DISTRIBUICAO,
   LABEL_PAPEL_FAMILIAR,
 } from '@/lib/format'
+import { Mail } from 'lucide-react'
 import { PrintButton } from '@/components/print-button'
 
 export default async function Relatorio({
@@ -24,6 +25,11 @@ export default async function Relatorio({
     data: { user },
   } = await supabase.auth.getUser()
 
+  const { data: orgId } = await supabase.rpc('current_org')
+  const { data: org } = await supabase
+    .from('organizations').select('nome, logo_url, cor_primaria').eq('id', orgId ?? '').maybeSingle()
+  const corMarca = org?.cor_primaria ?? undefined
+
   const { data: family } = await supabase.from('families').select('id, name').eq('id', params.id).single()
   if (!family) notFound()
 
@@ -34,6 +40,14 @@ export default async function Relatorio({
     .from('holdings').select('id, razao_social, tipo_societario, status, cnpj')
     .eq('family_id', params.id).order('razao_social')
   const holdingIds = (holdings ?? []).map((h) => h.id)
+
+  const { data: contatos } = await supabase
+    .from('family_contacts')
+    .select('email')
+    .eq('family_id', params.id)
+    .eq('receber_relatorio', true)
+
+  const emailsFamilia = (contatos ?? []).map((c) => c.email).filter(Boolean).join(',')
 
   const { data: socios } = await supabase
     .from('socios').select('id, nome, papel_familiar').eq('family_id', params.id).order('nome')
@@ -95,6 +109,15 @@ export default async function Relatorio({
               </Link>
             ))}
           </div>
+          {emailsFamilia && (
+            <a
+              href={`mailto:${emailsFamilia}?subject=${encodeURIComponent(`Relatório Anual ${ano} — ${family.name}`)}&body=${encodeURIComponent('Segue em anexo o relatório anual da família. Qualquer dúvida, estou à disposição.')}`}
+              className="no-print inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-surface"
+            >
+              <Mail size={15} />
+              Enviar por e-mail
+            </a>
+          )}
           <PrintButton />
         </div>
       </div>
@@ -102,7 +125,11 @@ export default async function Relatorio({
       {/* A FOLHA DO RELATÓRIO */}
       <div className="print-page mx-auto max-w-[820px] rounded-xl2 border border-line bg-white p-10 shadow-card">
         <header className="border-b border-navy/15 pb-6">
-          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep">Relatório Anual · {ano}</div>
+          {org?.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={org.logo_url} alt={org?.nome ?? ''} className="mb-3 h-10 w-auto" />
+          )}
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep" style={corMarca ? { color: corMarca } : undefined}>Relatório Anual · {ano}</div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-navy">{family.name}</h1>
           <p className="mt-2 text-sm text-ink-muted">
             Gestão patrimonial e sucessória · emitido em {formatarDataISO(hoje)}
@@ -205,7 +232,7 @@ export default async function Relatorio({
             <span className="num font-semibold text-navy">{pctTransferido}%</span>
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-line">
-            <div className="h-full rounded-full bg-gold" style={{ width: `${pctTransferido}%` }} />
+            <div className="h-full rounded-full bg-gold" style={{ width: `${pctTransferido}%`, ...(corMarca ? { backgroundColor: corMarca } : {}) }} />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div className="rounded-lg bg-cream/60 px-4 py-3">
@@ -238,7 +265,7 @@ export default async function Relatorio({
             estadual e a avaliação dos bens. Este relatório organiza e registra fatos contábeis; a redação e
             interpretação de instrumentos jurídicos (doações, cláusulas, pactos) cabem ao advogado.
           </p>
-          <p className="mt-2">Preparado por {user?.email ?? 'seu contador'}.</p>
+          <p className="mt-2">Preparado por {org?.nome ?? 'seu contador'}{user?.email ? ` · ${user.email}` : ''}.</p>
         </footer>
       </div>
     </div>

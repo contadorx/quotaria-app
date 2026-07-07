@@ -16,10 +16,10 @@ function sanitize(name: string) {
 }
 
 export function UploadDocumento({
-  userId,
+  pastaId,
   holdings,
 }: {
-  userId: string
+  pastaId: string
   holdings: { id: string; razao_social: string }[]
 }) {
   const router = useRouter()
@@ -40,7 +40,7 @@ export function UploadDocumento({
     setErro('')
     try {
       const supabase = createClient()
-      const path = `${userId}/${holdingId || 'geral'}/${crypto.randomUUID()}-${sanitize(file.name)}`
+      const path = `${pastaId}/${holdingId || 'geral'}/${crypto.randomUUID()}-${sanitize(file.name)}`
       const { error: upErr } = await supabase.storage.from('documentos').upload(path, file)
       if (upErr) {
         setErro('Falha no upload: ' + upErr.message)

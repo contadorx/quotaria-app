@@ -58,6 +58,8 @@ export type TipoDistribuicao = 'lucros' | 'jcp' | 'outro'
 
 export type StatusDoacao = 'planejada' | 'em_cartorio' | 'concluida'
 
+export type PapelMembro = 'dono' | 'admin' | 'colaborador'
+
 export type TipoDocumento =
   | 'ata'
   | 'contrato_social'
@@ -74,6 +76,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           name: string
           notes: string | null
           created_at: string
@@ -82,6 +85,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           name: string
           notes?: string | null
           created_at?: string
@@ -90,6 +94,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           name?: string
           notes?: string | null
           created_at?: string
@@ -101,6 +106,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           family_id: string
           razao_social: string
           nome_fantasia: string | null
@@ -116,6 +122,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           family_id: string
           razao_social: string
           nome_fantasia?: string | null
@@ -131,6 +138,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           family_id?: string
           razao_social?: string
           nome_fantasia?: string | null
@@ -149,6 +157,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           family_id: string
           nome: string
           cpf: string | null
@@ -165,6 +174,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           family_id: string
           nome: string
           cpf?: string | null
@@ -181,6 +191,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           family_id?: string
           nome?: string
           cpf?: string | null
@@ -200,6 +211,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string
           socio_id: string
           quantidade: number
@@ -214,6 +226,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id: string
           socio_id: string
           quantidade?: number
@@ -228,6 +241,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string
           socio_id?: string
           quantidade?: number
@@ -245,6 +259,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string
           tipo: TipoBem
           descricao: string
@@ -261,6 +276,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id: string
           tipo?: TipoBem
           descricao: string
@@ -277,6 +293,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string
           tipo?: TipoBem
           descricao?: string
@@ -296,6 +313,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           tipo: TipoClausula
           holding_id: string | null
           quota_id: string | null
@@ -310,6 +328,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           tipo: TipoClausula
           holding_id?: string | null
           quota_id?: string | null
@@ -324,6 +343,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           tipo?: TipoClausula
           holding_id?: string | null
           quota_id?: string | null
@@ -341,6 +361,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string | null
           titulo: string
           tipo: TipoEvento
@@ -354,6 +375,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string | null
           titulo: string
           tipo?: TipoEvento
@@ -367,6 +389,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string | null
           titulo?: string
           tipo?: TipoEvento
@@ -383,6 +406,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string
           competencia: string
           valor_total: number
@@ -397,6 +421,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id: string
           competencia: string
           valor_total?: number
@@ -411,6 +436,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string
           competencia?: string
           valor_total?: number
@@ -428,6 +454,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string
           doador_id: string | null
           donatario_id: string | null
@@ -446,6 +473,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id: string
           doador_id?: string | null
           donatario_id?: string | null
@@ -464,6 +492,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string
           doador_id?: string | null
           donatario_id?: string | null
@@ -485,6 +514,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string | null
           nome: string
           tipo: TipoDocumento
@@ -498,6 +528,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string | null
           nome: string
           tipo?: TipoDocumento
@@ -511,6 +542,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string | null
           nome?: string
           tipo?: TipoDocumento
@@ -527,6 +559,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string
           competencia: string
           distribuicoes_ok: boolean
@@ -540,6 +573,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id: string
           competencia: string
           distribuicoes_ok?: boolean
@@ -553,6 +587,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string
           competencia?: string
           distribuicoes_ok?: boolean
@@ -569,6 +604,7 @@ export interface Database {
         Row: {
           id: string
           accountant_id: string
+          organization_id: string
           holding_id: string
           nfse_cbs: boolean
           clausula_repasse: boolean
@@ -582,6 +618,7 @@ export interface Database {
         Insert: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id: string
           nfse_cbs?: boolean
           clausula_repasse?: boolean
@@ -595,6 +632,7 @@ export interface Database {
         Update: {
           id?: string
           accountant_id?: string
+          organization_id?: string
           holding_id?: string
           nfse_cbs?: boolean
           clausula_repasse?: boolean
@@ -607,12 +645,172 @@ export interface Database {
         }
         Relationships: []
       }
+      family_contacts: {
+        Row: {
+          id: string
+          accountant_id: string
+          organization_id: string
+          family_id: string
+          nome: string
+          email: string | null
+          parentesco: string | null
+          receber_relatorio: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          organization_id?: string
+          family_id: string
+          nome: string
+          email?: string | null
+          parentesco?: string | null
+          receber_relatorio?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          organization_id?: string
+          family_id?: string
+          nome?: string
+          email?: string | null
+          parentesco?: string | null
+          receber_relatorio?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organizations: {
+        Row: {
+          id: string
+          nome: string
+          cnpj: string | null
+          crc: string | null
+          email_contato: string | null
+          telefone: string | null
+          logo_url: string | null
+          cor_primaria: string | null
+          cor_secundaria: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          cnpj?: string | null
+          crc?: string | null
+          email_contato?: string | null
+          telefone?: string | null
+          logo_url?: string | null
+          cor_primaria?: string | null
+          cor_secundaria?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          cnpj?: string | null
+          crc?: string | null
+          email_contato?: string | null
+          telefone?: string | null
+          logo_url?: string | null
+          cor_primaria?: string | null
+          cor_secundaria?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_members: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          email: string | null
+          role: PapelMembro
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          email?: string | null
+          role?: PapelMembro
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          email?: string | null
+          role?: PapelMembro
+          created_at?: string
+        }
+        Relationships: []
+      }
+      organization_invites: {
+        Row: {
+          id: string
+          organization_id: string
+          email: string
+          role: PapelMembro
+          token: string
+          expires_at: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string
+          email: string
+          role?: PapelMembro
+          token?: string
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          email?: string
+          role?: PapelMembro
+          token?: string
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_org: {
+        Args: Record<PropertyKey, never>
+        Returns: string | null
+      }
+      is_org_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      criar_escritorio: {
+        Args: { p_nome: string; p_cnpj?: string | null; p_crc?: string | null }
+        Returns: string
+      }
+      ver_convite: {
+        Args: { p_token: string }
+        Returns: { organizacao: string; email: string; papel: string; invalido: boolean }[]
+      }
+      aceitar_convite: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

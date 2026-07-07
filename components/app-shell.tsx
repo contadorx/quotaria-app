@@ -5,10 +5,12 @@ import { Sidebar, MobileHeader } from '@/components/sidebar'
 
 export function AppShell({
   email,
+  orgNome,
   colapsadoInicial,
   children,
 }: {
   email: string
+  orgNome: string
   colapsadoInicial: boolean
   children: React.ReactNode
 }) {
@@ -25,7 +27,7 @@ export function AppShell({
 
   return (
     <div className="min-h-[100dvh]">
-      <Sidebar email={email} colapsado={colapsado} onToggle={toggle} />
+      <Sidebar email={email} orgNome={orgNome} colapsado={colapsado} onToggle={toggle} />
       <MobileHeader />
       <div className={`transition-all duration-200 ${colapsado ? 'md:pl-[72px]' : 'md:pl-[240px]'}`}>
         <main className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">

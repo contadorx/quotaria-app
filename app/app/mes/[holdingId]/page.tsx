@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Check, Minus } from 'lucide-react'
+import { Check, Minus, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import {
   formatarDataISO,
@@ -39,9 +39,18 @@ export default async function ExtratoMensal({
   const prefixoMes = `${ano}-${mm}`
   const hojeISO = hoje.toISOString().slice(0, 10)
 
+  const { data: orgId } = await supabase.rpc('current_org')
+  const { data: org } = await supabase
+    .from('organizations').select('nome, logo_url, cor_primaria').eq('id', orgId ?? '').maybeSingle()
+  const corMarca = org?.cor_primaria ?? undefined
+
   const { data: holding } = await supabase.from('holdings').select('id, razao_social, family_id').eq('id', params.holdingId).single()
   if (!holding) notFound()
   const { data: family } = await supabase.from('families').select('id, name').eq('id', holding.family_id).single()
+  const { data: contatos } = await supabase
+    .from('family_contacts').select('email').eq('family_id', holding.family_id).eq('receber_relatorio', true)
+  const emailsFamilia = (contatos ?? []).map((c) => c.email).filter(Boolean).join(',')
+
   const { data: socios } = await supabase.from('socios').select('id, nome').eq('family_id', holding.family_id)
   const nomeSocio = new Map((socios ?? []).map((s) => [s.id, s.nome]))
 
@@ -83,13 +92,28 @@ export default async function ExtratoMensal({
     <div>
       <div className="no-print mb-6 flex items-center justify-between">
         <Link href={`/app/mes?ano=${ano}&mes=${mes}`} className="text-sm text-ink-muted transition hover:text-ink">← Mês da Holding</Link>
-        <PrintButton />
+        <div className="flex items-center gap-3">
+          {emailsFamilia && (
+            <a
+              href={`mailto:${emailsFamilia}?subject=${encodeURIComponent(`Extrato mensal ${MESES[mes - 1]}/${ano} — ${holding.razao_social}`)}&body=${encodeURIComponent('Segue o extrato do mês da holding. Qualquer dúvida, estou à disposição.')}`}
+              className="no-print inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-surface"
+            >
+              <Mail size={15} />
+              Enviar por e-mail
+            </a>
+          )}
+          <PrintButton />
+        </div>
       </div>
 
       <div className="print-page mx-auto max-w-[820px] rounded-xl2 border border-line bg-white p-10 shadow-card">
         <header className="flex items-start justify-between border-b border-navy/15 pb-6">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep">
+            {org?.logo_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={org.logo_url} alt={org?.nome ?? ''} className="mb-3 h-9 w-auto" />
+            )}
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep" style={corMarca ? { color: corMarca } : undefined}>
               Extrato mensal · {MESES[mes - 1]} de {ano}
             </div>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy">{holding.razao_social}</h1>
@@ -152,7 +176,7 @@ export default async function ExtratoMensal({
 
         <footer className="mt-10 border-t border-navy/15 pt-4 text-xs leading-relaxed text-ink-soft">
           <p>Este extrato registra a manutenção contábil e documental da holding no período. Estimativas de valor variam conforme legislação e avaliação dos bens; a redação de instrumentos jurídicos cabe ao advogado.</p>
-          <p className="mt-2">Preparado por {user?.email ?? 'seu contador'}.</p>
+          <p className="mt-2">Preparado por {org?.nome ?? 'seu contador'}{user?.email ? ` · ${user.email}` : ''}.</p>
         </footer>
       </div>
     </div>

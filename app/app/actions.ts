@@ -671,3 +671,91 @@ export async function salvarConformidade(formData: FormData) {
   revalidatePath(dest)
   redirect(dest)
 }
+
+// -------------------------- Escritório (configurações) --------------------------
+export async function updateOrganization(formData: FormData) {
+  const id = s(formData, 'id')
+  const nome = s(formData, 'nome')
+  if (!id) redirect('/app/configuracoes')
+  if (!nome) redirect('/app/configuracoes?error=' + encodeURIComponent('Informe o nome do escritório.'))
+  const supabase = createClient()
+  const { error } = await supabase.from('organizations').update({
+    nome,
+    cnpj: orNull(s(formData, 'cnpj')),
+    crc: orNull(s(formData, 'crc')),
+    email_contato: orNull(s(formData, 'email_contato')),
+    telefone: orNull(s(formData, 'telefone')),
+    logo_url: orNull(s(formData, 'logo_url')),
+    cor_primaria: orNull(s(formData, 'cor_primaria')),
+  }).eq('id', id)
+  if (error) redirect('/app/configuracoes?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/configuracoes')
+  redirect('/app/configuracoes?message=' + encodeURIComponent('Configurações salvas.'))
+}
+
+// -------------------------- Equipe (membros e convites) --------------------------
+export async function convidarMembro(formData: FormData) {
+  const email = s(formData, 'email').toLowerCase()
+  const role = s(formData, 'role') === 'admin' ? 'admin' : 'colaborador'
+  if (!email) redirect('/app/configuracoes/equipe?error=' + encodeURIComponent('Informe o e-mail.'))
+  const supabase = createClient()
+  const { data: orgId } = await supabase.rpc('current_org')
+  if (!orgId) redirect('/onboarding')
+  const { error } = await supabase.from('organization_invites').insert({
+    organization_id: orgId,
+    email,
+    role,
+  })
+  if (error) redirect('/app/configuracoes/equipe?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/configuracoes/equipe')
+  redirect('/app/configuracoes/equipe')
+}
+
+export async function removerConvite(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/configuracoes/equipe')
+  const supabase = createClient()
+  await supabase.from('organization_invites').delete().eq('id', id)
+  revalidatePath('/app/configuracoes/equipe')
+  redirect('/app/configuracoes/equipe')
+}
+
+export async function removerMembro(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/configuracoes/equipe')
+  const supabase = createClient()
+  const { error } = await supabase.from('organization_members').delete().eq('id', id)
+  if (error) redirect('/app/configuracoes/equipe?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/configuracoes/equipe')
+  redirect('/app/configuracoes/equipe')
+}
+
+// -------------------------- Contatos da família --------------------------
+export async function createContato(formData: FormData) {
+  const familyId = s(formData, 'family_id')
+  const nome = s(formData, 'nome')
+  const dest = familyId ? `/app/familias/${familyId}` : '/app'
+  if (!familyId) redirect('/app')
+  if (!nome) redirect(`${dest}?error=` + encodeURIComponent('Informe o nome do contato.'))
+  const supabase = createClient()
+  const { error } = await supabase.from('family_contacts').insert({
+    family_id: familyId,
+    nome,
+    email: orNull(s(formData, 'email')),
+    parentesco: orNull(s(formData, 'parentesco')),
+  })
+  if (error) redirect(`${dest}?error=` + encodeURIComponent(error.message))
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function deleteContato(formData: FormData) {
+  const id = s(formData, 'id')
+  const familyId = s(formData, 'family_id')
+  const dest = familyId ? `/app/familias/${familyId}` : '/app'
+  if (!id) redirect(dest)
+  const supabase = createClient()
+  await supabase.from('family_contacts').delete().eq('id', id)
+  revalidatePath(dest)
+  redirect(dest)
+}

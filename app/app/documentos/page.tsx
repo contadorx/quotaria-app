@@ -11,6 +11,7 @@ export default async function DocumentosPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  const { data: orgId } = await supabase.rpc('current_org')
 
   const { data: holdings } = await supabase.from('holdings').select('id, razao_social').order('razao_social')
   const { data: documentos } = await supabase
@@ -28,7 +29,7 @@ export default async function DocumentosPage() {
         description="O dossiê auditável — atas, contratos, laudos e matrículas guardados por holding. A prova física da promessa, no dia em que o Fisco questiona ou o herdeiro pergunta."
       />
 
-      <UploadDocumento userId={user?.id ?? ''} holdings={holdings ?? []} />
+      <UploadDocumento pastaId={orgId ?? user?.id ?? ''} holdings={holdings ?? []} />
 
       <div className="mt-6">
         {!documentos || documentos.length === 0 ? (

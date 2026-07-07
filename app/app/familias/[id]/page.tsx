@@ -10,7 +10,7 @@ import {
   LABEL_ESTADO_CIVIL,
   LABEL_REGIME_BENS,
 } from '@/lib/format'
-import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio } from '../../actions'
+import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato } from '../../actions'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
 import { EditDialog } from '@/components/edit-dialog'
@@ -31,6 +31,12 @@ export default async function FamilyDetail({
   const { data: socios } = await supabase
     .from('socios').select('id, nome, papel_familiar, regime_bens, cpf, estado_civil')
     .eq('family_id', params.id).order('nome')
+
+  const { data: contatos } = await supabase
+    .from('family_contacts')
+    .select('id, nome, email, parentesco')
+    .eq('family_id', params.id)
+    .order('nome')
 
   const { data: holdings } = await supabase
     .from('holdings').select('id, razao_social, cnpj, tipo_societario, status, created_at')
@@ -148,6 +154,48 @@ export default async function FamilyDetail({
                   </form>
                 </EditDialog>
                 <DeleteButton action={deleteSocio} id={so.id} label={`o sócio "${so.nome}"`} extra={{ family_id: family.id }} />
+              </div>
+            ))}
+          </ListCard>
+        )}
+      </div>
+
+      {/* CONTATOS DA FAMÍLIA */}
+      <div className="mt-10"><SectionTitle>Contatos da família</SectionTitle></div>
+      <p className="mt-1 text-xs text-ink-soft">
+        Quem recebe o extrato mensal e o relatório anual — o botão de envio dos entregáveis já sai endereçado a eles.
+      </p>
+      <Card className="mt-3 p-5">
+        <form className="grid gap-4 sm:grid-cols-[1fr_1fr_auto_auto]">
+          <input type="hidden" name="family_id" value={family.id} />
+          <div>
+            <Label htmlFor="contato_nome">Nome</Label>
+            <input id="contato_nome" name="nome" required placeholder="Ex.: Roberto Andrade" className={fieldClass} />
+          </div>
+          <div>
+            <Label htmlFor="contato_email">E-mail</Label>
+            <input id="contato_email" name="email" type="email" placeholder="roberto@email.com" className={fieldClass} />
+          </div>
+          <div>
+            <Label htmlFor="contato_parentesco">Vínculo</Label>
+            <input id="contato_parentesco" name="parentesco" placeholder="Patriarca" className={fieldClass} />
+          </div>
+          <div className="self-end">
+            <SubmitButton action={createContato}>Adicionar</SubmitButton>
+          </div>
+        </form>
+      </Card>
+      <div className="mt-4">
+        {!contatos || contatos.length === 0 ? (
+          <EmptyState>Nenhum contato cadastrado ainda.</EmptyState>
+        ) : (
+          <ListCard>
+            {contatos.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 px-5 py-3 text-sm">
+                <span className="flex-1 font-medium text-ink">{c.nome}</span>
+                {c.parentesco && <Pill>{c.parentesco}</Pill>}
+                <span className="text-xs text-ink-muted">{c.email ?? 'sem e-mail'}</span>
+                <DeleteButton action={deleteContato} id={c.id} label={`o contato ${c.nome}`} extra={{ family_id: family.id }} />
               </div>
             ))}
           </ListCard>

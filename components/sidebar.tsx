@@ -10,6 +10,7 @@ import {
   Gift,
   FolderClosed,
   FileText,
+  Settings,
   LogOut,
   ChevronsLeft,
   ChevronsRight,
@@ -61,16 +62,24 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     icon: FileText,
     match: (p) => p.startsWith('/app/relatorios'),
   },
+  {
+    href: '/app/configuracoes',
+    label: 'Configurações',
+    icon: Settings,
+    match: (p) => p.startsWith('/app/configuracoes'),
+  },
 ]
 
 const EM_BREVE: { label: string; icon: LucideIcon }[] = []
 
 export function Sidebar({
   email,
+  orgNome,
   colapsado,
   onToggle,
 }: {
   email: string
+  orgNome: string
   colapsado: boolean
   onToggle: () => void
 }) {
@@ -143,7 +152,12 @@ export function Sidebar({
           colapsado ? 'flex flex-col items-center' : ''
         }`}
       >
-        {!colapsado && <div className="truncate px-3 pb-1 text-xs text-rail-muted">{email}</div>}
+        {!colapsado && (
+          <div className="px-3 pb-1">
+            <div className="truncate text-xs font-semibold text-white/80">{orgNome}</div>
+            <div className="truncate text-[11px] text-rail-muted">{email}</div>
+          </div>
+        )}
         <form action={signout} className={colapsado ? '' : 'w-full'}>
           <button
             title="Sair"
