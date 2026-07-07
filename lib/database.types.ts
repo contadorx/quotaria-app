@@ -1310,6 +1310,16 @@ export interface Database {
         Args: { p_contexto: string; p_ok: boolean }
         Returns: undefined
       }
+      registrar_assinatura_selecionada: {
+        Args: {
+          p_asaas_customer: string
+          p_asaas_subscription: string
+          p_plano: string
+          p_valor: number
+          p_ciclo: string
+        }
+        Returns: undefined
+      }
       admin_suporte: {
         Args: Record<PropertyKey, never>
         Returns: Json

@@ -8,6 +8,10 @@ const BASE = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3'
 
 export type Ciclo = 'mensal' | 'semestral' | 'anual'
 
+export function hojeISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export function cicloAsaas(ciclo: Ciclo): 'MONTHLY' | 'SEMIANNUALLY' | 'YEARLY' {
   if (ciclo === 'anual') return 'YEARLY'
   if (ciclo === 'semestral') return 'SEMIANNUALLY'
