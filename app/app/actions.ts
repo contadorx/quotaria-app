@@ -18,6 +18,7 @@ import type {
   TipoDistribuicao,
   StatusDoacao,
   TipoDocumento,
+  StatusRadar,
 } from '@/lib/database.types'
 
 export async function signout() {
@@ -758,4 +759,85 @@ export async function deleteContato(formData: FormData) {
   await supabase.from('family_contacts').delete().eq('id', id)
   revalidatePath(dest)
   redirect(dest)
+}
+
+// -------------------------- Radar de Oportunidades --------------------------
+export async function createRadarCliente(formData: FormData) {
+  const nome = s(formData, 'nome')
+  if (!nome) redirect('/app/radar?error=' + encodeURIComponent('Informe o nome do cliente.'))
+  const num = (k: string) => {
+    const v = s(formData, k)
+    return v === '' ? 0 : Number(v)
+  }
+  const supabase = createClient()
+  const { data, error } = await supabase.from('radar_clientes').insert({
+    nome,
+    uf: s(formData, 'uf') || 'SP',
+    n_imoveis: Math.round(num('n_imoveis')),
+    patrimonio: num('patrimonio'),
+    renda_aluguel_anual: num('renda_aluguel_anual'),
+    socio_pj: formData.get('socio_pj') === 'on',
+    recebe_dividendos: formData.get('recebe_dividendos') === 'on',
+    n_herdeiros: Math.round(num('n_herdeiros')),
+  }).select('id').single()
+  if (error) redirect('/app/radar?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/radar')
+  redirect(`/app/radar/${data.id}`)
+}
+
+export async function updateRadarSinais(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/radar')
+  const num = (k: string) => {
+    const v = s(formData, k)
+    return v === '' ? 0 : Number(v)
+  }
+  const lgpd = formData.get('lgpd') === 'on'
+  const supabase = createClient()
+  const payload: {
+    n_imoveis: number
+    patrimonio: number
+    renda_aluguel_anual: number
+    socio_pj: boolean
+    recebe_dividendos: boolean
+    n_herdeiros: number
+    uf: string
+    itcmd_pct: number
+    inventario_pct: number
+    lgpd_confirmado_em?: string
+  } = {
+    n_imoveis: Math.round(num('n_imoveis')),
+    patrimonio: num('patrimonio'),
+    renda_aluguel_anual: num('renda_aluguel_anual'),
+    socio_pj: formData.get('socio_pj') === 'on',
+    recebe_dividendos: formData.get('recebe_dividendos') === 'on',
+    n_herdeiros: Math.round(num('n_herdeiros')),
+    uf: s(formData, 'uf') || 'SP',
+    itcmd_pct: num('itcmd_pct') || 4,
+    inventario_pct: num('inventario_pct') || 12,
+  }
+  if (lgpd) payload.lgpd_confirmado_em = new Date().toISOString()
+  const { error } = await supabase.from('radar_clientes').update(payload).eq('id', id)
+  if (error) redirect(`/app/radar/${id}?error=` + encodeURIComponent(error.message))
+  revalidatePath(`/app/radar/${id}`)
+  redirect(`/app/radar/${id}`)
+}
+
+export async function updateRadarStatus(formData: FormData) {
+  const id = s(formData, 'id')
+  const to = s(formData, 'to') as StatusRadar
+  if (!id) redirect('/app/radar')
+  const supabase = createClient()
+  await supabase.from('radar_clientes').update({ status: to }).eq('id', id)
+  revalidatePath(`/app/radar/${id}`)
+  redirect(`/app/radar/${id}`)
+}
+
+export async function deleteRadarCliente(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/radar')
+  const supabase = createClient()
+  await supabase.from('radar_clientes').delete().eq('id', id)
+  revalidatePath('/app/radar')
+  redirect('/app/radar')
 }

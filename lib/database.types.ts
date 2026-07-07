@@ -58,6 +58,8 @@ export type TipoDistribuicao = 'lucros' | 'jcp' | 'outro'
 
 export type StatusDoacao = 'planejada' | 'em_cartorio' | 'concluida'
 
+export type StatusRadar = 'novo' | 'abordado' | 'diagnostico' | 'proposta' | 'fechado' | 'descartado'
+
 export type PapelMembro = 'dono' | 'admin' | 'colaborador'
 
 export type TipoDocumento =
@@ -679,6 +681,69 @@ export interface Database {
           email?: string | null
           parentesco?: string | null
           receber_relatorio?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      radar_clientes: {
+        Row: {
+          id: string
+          accountant_id: string
+          organization_id: string
+          nome: string
+          uf: string
+          n_imoveis: number
+          patrimonio: number
+          renda_aluguel_anual: number
+          socio_pj: boolean
+          recebe_dividendos: boolean
+          n_herdeiros: number
+          itcmd_pct: number
+          inventario_pct: number
+          status: StatusRadar
+          lgpd_confirmado_em: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          organization_id?: string
+          nome: string
+          uf?: string
+          n_imoveis?: number
+          patrimonio?: number
+          renda_aluguel_anual?: number
+          socio_pj?: boolean
+          recebe_dividendos?: boolean
+          n_herdeiros?: number
+          itcmd_pct?: number
+          inventario_pct?: number
+          status?: StatusRadar
+          lgpd_confirmado_em?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          organization_id?: string
+          nome?: string
+          uf?: string
+          n_imoveis?: number
+          patrimonio?: number
+          renda_aluguel_anual?: number
+          socio_pj?: boolean
+          recebe_dividendos?: boolean
+          n_herdeiros?: number
+          itcmd_pct?: number
+          inventario_pct?: number
+          status?: StatusRadar
+          lgpd_confirmado_em?: string | null
+          notes?: string | null
           created_at?: string
           updated_at?: string
         }

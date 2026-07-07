@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Users,
+  Radar,
   CalendarClock,
   ClipboardCheck,
   ArrowLeftRight,
@@ -25,6 +26,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     label: 'Famílias',
     icon: Users,
     match: (p) => p === '/app' || p.startsWith('/app/familias') || p.startsWith('/app/holdings'),
+  },
+  {
+    href: '/app/radar',
+    label: 'Radar',
+    icon: Radar,
+    match: (p) => p.startsWith('/app/radar'),
   },
   {
     href: '/app/calendario',
