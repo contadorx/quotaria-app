@@ -1,8 +1,14 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { formatarData, LABEL_TIPO_SOCIETARIO, LABEL_STATUS_HOLDING } from '@/lib/format'
-import { createHolding } from '../../actions'
+import {
+  formatarData,
+  LABEL_TIPO_SOCIETARIO,
+  LABEL_STATUS_HOLDING,
+  LABEL_PAPEL_FAMILIAR,
+  LABEL_REGIME_BENS,
+} from '@/lib/format'
+import { createHolding, createSocio } from '../../actions'
 
 export default async function FamilyDetail({
   params,
@@ -21,11 +27,20 @@ export default async function FamilyDetail({
 
   if (!family) notFound()
 
+  const { data: socios } = await supabase
+    .from('socios')
+    .select('id, nome, papel_familiar, regime_bens, cpf')
+    .eq('family_id', params.id)
+    .order('nome')
+
   const { data: holdings } = await supabase
     .from('holdings')
     .select('id, razao_social, cnpj, tipo_societario, status, created_at')
     .eq('family_id', params.id)
     .order('razao_social')
+
+  const inputClass =
+    'mt-1 w-full rounded-md border border-navy/15 bg-white px-3 py-2 text-sm text-navy outline-none transition focus:border-gold'
 
   return (
     <div>
@@ -38,36 +53,99 @@ export default async function FamilyDetail({
         cadastrada em {formatarData(family.created_at)}
       </p>
 
-      <div className="mt-8 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-navy/80">
-          Holdings
-        </h2>
+      {searchParams?.error && (
+        <p className="mt-4 text-sm font-medium text-red-700">{searchParams.error}</p>
+      )}
+
+      {/* ===================== SÓCIOS ===================== */}
+      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-navy/80">
+        Sócios
+      </h2>
+
+      <form className="mt-4 grid gap-3 rounded-lg border border-navy/10 bg-white/50 p-5 sm:grid-cols-2">
+        <input type="hidden" name="family_id" value={family.id} />
+        <div>
+          <label htmlFor="nome" className="block text-xs font-medium text-navy/70">
+            Nome
+          </label>
+          <input id="nome" name="nome" required placeholder="Ex.: Roberto Andrade" className={inputClass} />
+        </div>
+        <div>
+          <label htmlFor="cpf" className="block text-xs font-medium text-navy/70">
+            CPF (opcional)
+          </label>
+          <input id="cpf" name="cpf" placeholder="000.000.000-00" className={inputClass} />
+        </div>
+        <div>
+          <label htmlFor="papel_familiar" className="block text-xs font-medium text-navy/70">
+            Papel na família
+          </label>
+          <select id="papel_familiar" name="papel_familiar" className={inputClass}>
+            <option value="">—</option>
+            {Object.entries(LABEL_PAPEL_FAMILIAR).map(([v, label]) => (
+              <option key={v} value={v}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="regime_bens" className="block text-xs font-medium text-navy/70">
+            Regime de bens
+          </label>
+          <select id="regime_bens" name="regime_bens" className={inputClass}>
+            <option value="">—</option>
+            {Object.entries(LABEL_REGIME_BENS).map(([v, label]) => (
+              <option key={v} value={v}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="sm:col-span-2">
+          <button
+            formAction={createSocio}
+            className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-cream transition hover:bg-navy-soft"
+          >
+            Adicionar sócio
+          </button>
+        </div>
+      </form>
+
+      <div className="mt-4">
+        {!socios || socios.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-navy/20 p-6 text-center text-sm text-navy/50">
+            Nenhum sócio cadastrado ainda.
+          </div>
+        ) : (
+          <ul className="divide-y divide-navy/10 overflow-hidden rounded-lg border border-navy/10 bg-white/50">
+            {socios.map((s) => (
+              <li key={s.id} className="flex items-center justify-between px-5 py-3">
+                <span className="font-medium text-navy">{s.nome}</span>
+                <span className="text-xs text-navy/50">
+                  {s.papel_familiar ? LABEL_PAPEL_FAMILIAR[s.papel_familiar] : '—'}
+                  {s.regime_bens ? ` · ${LABEL_REGIME_BENS[s.regime_bens]}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* nova holding */}
+      {/* ===================== HOLDINGS ===================== */}
+      <h2 className="mt-12 text-sm font-semibold uppercase tracking-wide text-navy/80">
+        Holdings
+      </h2>
+
       <form className="mt-4 grid gap-3 rounded-lg border border-navy/10 bg-white/50 p-5 sm:grid-cols-[1fr_auto_auto_auto]">
         <input type="hidden" name="family_id" value={family.id} />
         <div>
           <label htmlFor="razao_social" className="block text-xs font-medium text-navy/70">
             Razão social
           </label>
-          <input
-            id="razao_social"
-            name="razao_social"
-            required
-            placeholder="Ex.: Andrade Participações Ltda"
-            className="mt-1 w-full rounded-md border border-navy/15 bg-white px-3 py-2 text-sm text-navy outline-none transition focus:border-gold"
-          />
+          <input id="razao_social" name="razao_social" required placeholder="Ex.: Andrade Participações Ltda" className={inputClass} />
         </div>
         <div>
           <label htmlFor="tipo_societario" className="block text-xs font-medium text-navy/70">
             Tipo
           </label>
-          <select
-            id="tipo_societario"
-            name="tipo_societario"
-            className="mt-1 rounded-md border border-navy/15 bg-white px-3 py-2 text-sm text-navy outline-none transition focus:border-gold"
-          >
+          <select id="tipo_societario" name="tipo_societario" className={inputClass}>
             <option value="ltda">Ltda</option>
             <option value="sa">S/A</option>
           </select>
@@ -76,12 +154,7 @@ export default async function FamilyDetail({
           <label htmlFor="cnpj" className="block text-xs font-medium text-navy/70">
             CNPJ (opcional)
           </label>
-          <input
-            id="cnpj"
-            name="cnpj"
-            placeholder="00.000.000/0001-00"
-            className="mt-1 w-full rounded-md border border-navy/15 bg-white px-3 py-2 text-sm text-navy outline-none transition focus:border-gold"
-          />
+          <input id="cnpj" name="cnpj" placeholder="00.000.000/0001-00" className={inputClass} />
         </div>
         <button
           formAction={createHolding}
@@ -90,14 +163,10 @@ export default async function FamilyDetail({
           Adicionar
         </button>
       </form>
-      {searchParams?.error && (
-        <p className="mt-2 text-sm font-medium text-red-700">{searchParams.error}</p>
-      )}
 
-      {/* lista de holdings */}
-      <div className="mt-6">
+      <div className="mt-4">
         {!holdings || holdings.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-navy/20 p-8 text-center text-sm text-navy/50">
+          <div className="rounded-lg border border-dashed border-navy/20 p-6 text-center text-sm text-navy/50">
             Nenhuma holding nesta família ainda.
           </div>
         ) : (
