@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { LogoMark, Wordmark } from '@/components/brand'
 import { fieldClass } from '@/components/ui'
+import { PendingButton } from '@/components/submit-button'
 import { criarEscritorio } from './actions'
 
 export default async function Onboarding({
@@ -58,12 +59,12 @@ export default async function Onboarding({
               <p className="text-sm font-medium text-red-600">{searchParams.error}</p>
             )}
 
-            <button
-              formAction={criarEscritorio}
+            <PendingButton
+              action={criarEscritorio}
               className="w-full rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-soft"
             >
               Criar escritório e entrar
-            </button>
+            </PendingButton>
           </form>
         </div>
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { FileScan, ShieldCheck, AlertTriangle, X, Heart } from 'lucide-react'
 import { Card, Label, fieldClass } from '@/components/ui'
+import { PendingButton } from '@/components/submit-button'
 
 type Declaracao = {
   arquivo: string
@@ -292,9 +293,9 @@ export function ImportarDirpf({
                     ciente de que os arquivos e CPFs não foram armazenados.
                   </span>
                 </label>
-                <button className="mt-4 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-soft">
+                <PendingButton className="mt-4 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-soft">
                   Aplicar consolidado da família
-                </button>
+                </PendingButton>
               </form>
             </>
           )}

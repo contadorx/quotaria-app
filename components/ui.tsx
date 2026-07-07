@@ -78,28 +78,7 @@ export function Label({
   )
 }
 
-export function SubmitButton({
-  action,
-  children,
-  variant = 'primary',
-}: {
-  action: (formData: FormData) => void
-  children: React.ReactNode
-  variant?: 'primary' | 'ghost'
-}) {
-  const cls =
-    variant === 'primary'
-      ? 'bg-navy text-white hover:bg-navy-soft'
-      : 'border border-line text-ink hover:bg-surface'
-  return (
-    <button
-      formAction={action}
-      className={`inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold transition ${cls}`}
-    >
-      {children}
-    </button>
-  )
-}
+export { SubmitButton } from './submit-button'
 
 export function EmptyState({ children }: { children: React.ReactNode }) {
   return (

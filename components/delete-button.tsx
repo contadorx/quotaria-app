@@ -1,6 +1,23 @@
 'use client'
 
-import { Trash2 } from 'lucide-react'
+import { useFormStatus } from 'react-dom'
+import { Trash2, Loader2 } from 'lucide-react'
+
+function BotaoExcluir() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      title="Excluir"
+      aria-label="Excluir"
+      aria-busy={pending}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-soft transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+    </button>
+  )
+}
 
 export function DeleteButton({
   action,
@@ -27,14 +44,7 @@ export function DeleteButton({
         Object.entries(extra).map(([k, v]) => (
           <input key={k} type="hidden" name={k} value={v} />
         ))}
-      <button
-        type="submit"
-        title="Excluir"
-        aria-label="Excluir"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-soft transition hover:bg-red-50 hover:text-red-600"
-      >
-        <Trash2 size={15} />
-      </button>
+      <BotaoExcluir />
     </form>
   )
 }

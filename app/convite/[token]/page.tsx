@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { LogoMark, Wordmark } from '@/components/brand'
 import { aceitarConvite } from './actions'
+import { PendingButton } from '@/components/submit-button'
 
 export default async function ConvitePage({
   params,
@@ -65,12 +66,12 @@ export default async function ConvitePage({
                 <form className="mt-5">
                   <input type="hidden" name="token" value={params.token} />
                   {searchParams?.error && <p className="mb-3 text-sm font-medium text-red-600">{searchParams.error}</p>}
-                  <button
-                    formAction={aceitarConvite}
+                  <PendingButton
+                    action={aceitarConvite}
                     className="w-full rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-soft"
                   >
                     Aceitar convite e entrar no escritório
-                  </button>
+                  </PendingButton>
                 </form>
               )}
             </>

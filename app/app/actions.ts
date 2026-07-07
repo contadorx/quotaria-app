@@ -845,3 +845,28 @@ export async function deleteRadarCliente(formData: FormData) {
   revalidatePath('/app/radar')
   redirect('/app/radar')
 }
+
+// -------------------------- Doações — execução, cláusulas e usufruto --------------------------
+export async function updateDoacaoExecucao(formData: FormData) {
+  const id = s(formData, 'id')
+  const voltar = s(formData, 'voltar') || '/app/doacoes'
+  if (!id) redirect(voltar)
+  const on = (k: string) => formData.get(k) === 'on'
+  const supabase = createClient()
+  const { error } = await supabase.from('doacoes').update({
+    minuta_solicitada: on('minuta_solicitada'),
+    guia_itcmd_paga: on('guia_itcmd_paga'),
+    escritura_lavrada: on('escritura_lavrada'),
+    registro_concluido: on('registro_concluido'),
+    clausula_incomunicabilidade: on('clausula_incomunicabilidade'),
+    clausula_impenhorabilidade: on('clausula_impenhorabilidade'),
+    clausula_inalienabilidade: on('clausula_inalienabilidade'),
+    clausula_reversao: on('clausula_reversao'),
+    usufruto_extinto_em: orNull(s(formData, 'usufruto_extinto_em')),
+    usufruto_extinto_motivo: orNull(s(formData, 'usufruto_extinto_motivo')),
+    consolidacao_registrada: on('consolidacao_registrada'),
+  }).eq('id', id)
+  if (error) redirect(`${voltar}?error=` + encodeURIComponent(error.message))
+  revalidatePath(voltar)
+  redirect(voltar)
+}

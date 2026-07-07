@@ -12,6 +12,7 @@ import { PageHeader, Card, SectionTitle, Label, SubmitButton, Pill, fieldClass }
 import { EditDialog } from '@/components/edit-dialog'
 import { DeleteButton } from '@/components/delete-button'
 import { CopyButton } from '@/components/copy-button'
+import { PendingButton } from '@/components/submit-button'
 import { ImportarDirpf } from '@/components/importar-dirpf'
 
 const FLUXO: Record<string, string[]> = {
@@ -156,9 +157,9 @@ export default async function RadarClientePage({
           <form key={to} action={updateRadarStatus}>
             <input type="hidden" name="id" value={c.id} />
             <input type="hidden" name="to" value={to} />
-            <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink-muted transition hover:bg-surface hover:text-ink">
+            <PendingButton className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink-muted transition hover:bg-surface hover:text-ink">
               → {LABEL_STATUS_RADAR[to]}
-            </button>
+            </PendingButton>
           </form>
         ))}
         <div className="ml-auto">

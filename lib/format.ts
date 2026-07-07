@@ -116,3 +116,23 @@ export function formatarTamanho(bytes: number | null): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
+
+export const LABEL_MOTIVO_EXTINCAO: Record<string, string> = {
+  falecimento: 'Falecimento do usufrutuário',
+  renuncia: 'Renúncia ao usufruto',
+  outro: 'Outro (termo/decisão)',
+}
+
+export const CLAUSULAS_DOACAO: { campo: string; label: string; sigla: string }[] = [
+  { campo: 'clausula_incomunicabilidade', label: 'Incomunicabilidade', sigla: 'INC' },
+  { campo: 'clausula_impenhorabilidade', label: 'Impenhorabilidade', sigla: 'IMP' },
+  { campo: 'clausula_inalienabilidade', label: 'Inalienabilidade', sigla: 'INA' },
+  { campo: 'clausula_reversao', label: 'Reversão', sigla: 'REV' },
+]
+
+export const EXECUCAO_DOACAO: { campo: string; label: string }[] = [
+  { campo: 'minuta_solicitada', label: 'Minuta solicitada ao advogado' },
+  { campo: 'guia_itcmd_paga', label: 'Guia de ITCMD paga' },
+  { campo: 'escritura_lavrada', label: 'Escritura lavrada' },
+  { campo: 'registro_concluido', label: 'Registro concluído' },
+]

@@ -3,6 +3,7 @@ import { formatarDataISO, LABEL_TIPO_EVENTO } from '@/lib/format'
 import { createEvento, toggleEvento, deleteEvento, seedMarcosReforma } from '../actions'
 import { PageHeader, Card, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
+import { PendingButton } from '@/components/submit-button'
 
 type Evento = {
   id: string
@@ -160,9 +161,9 @@ function Grupo({
               <form action={toggleEvento}>
                 <input type="hidden" name="id" value={e.id} />
                 <input type="hidden" name="to" value={concluido ? 'pendente' : 'concluido'} />
-                <button className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink">
+                <PendingButton className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink">
                   {concluido ? 'Reabrir' : 'Concluir'}
-                </button>
+                </PendingButton>
               </form>
               <DeleteButton action={deleteEvento} id={e.id} label={`o evento "${e.titulo}"`} />
             </div>

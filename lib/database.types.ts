@@ -464,6 +464,17 @@ export interface Database {
           valor_estimado: number | null
           itcmd_estimado: number | null
           com_reserva_usufruto: boolean
+          minuta_solicitada: boolean
+          guia_itcmd_paga: boolean
+          escritura_lavrada: boolean
+          registro_concluido: boolean
+          clausula_incomunicabilidade: boolean
+          clausula_impenhorabilidade: boolean
+          clausula_inalienabilidade: boolean
+          clausula_reversao: boolean
+          usufruto_extinto_em: string | null
+          usufruto_extinto_motivo: string | null
+          consolidacao_registrada: boolean
           data_prevista: string | null
           status: StatusDoacao
           data_conclusao: string | null
@@ -483,6 +494,17 @@ export interface Database {
           valor_estimado?: number | null
           itcmd_estimado?: number | null
           com_reserva_usufruto?: boolean
+          minuta_solicitada?: boolean
+          guia_itcmd_paga?: boolean
+          escritura_lavrada?: boolean
+          registro_concluido?: boolean
+          clausula_incomunicabilidade?: boolean
+          clausula_impenhorabilidade?: boolean
+          clausula_inalienabilidade?: boolean
+          clausula_reversao?: boolean
+          usufruto_extinto_em?: string | null
+          usufruto_extinto_motivo?: string | null
+          consolidacao_registrada?: boolean
           data_prevista?: string | null
           status?: StatusDoacao
           data_conclusao?: string | null
@@ -502,6 +524,17 @@ export interface Database {
           valor_estimado?: number | null
           itcmd_estimado?: number | null
           com_reserva_usufruto?: boolean
+          minuta_solicitada?: boolean
+          guia_itcmd_paga?: boolean
+          escritura_lavrada?: boolean
+          registro_concluido?: boolean
+          clausula_incomunicabilidade?: boolean
+          clausula_impenhorabilidade?: boolean
+          clausula_inalienabilidade?: boolean
+          clausula_reversao?: boolean
+          usufruto_extinto_em?: string | null
+          usufruto_extinto_motivo?: string | null
+          consolidacao_registrada?: boolean
           data_prevista?: string | null
           status?: StatusDoacao
           data_conclusao?: string | null

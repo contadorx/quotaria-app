@@ -1,10 +1,12 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { formatarDataISO, formatarMoeda, LABEL_STATUS_DOACAO } from '@/lib/format'
-import { createDoacao, changeStatusDoacao, deleteDoacao } from '../actions'
+import { formatarDataISO, formatarMoeda, LABEL_STATUS_DOACAO, LABEL_MOTIVO_EXTINCAO, CLAUSULAS_DOACAO, EXECUCAO_DOACAO } from '@/lib/format'
+import { createDoacao, changeStatusDoacao, deleteDoacao, updateDoacaoExecucao } from '../actions'
 import { PageHeader, Card, EmptyState, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
+import { EditDialog } from '@/components/edit-dialog'
+import { PendingButton } from '@/components/submit-button'
 
 type Doacao = {
   id: string
@@ -18,6 +20,17 @@ type Doacao = {
   data_prevista: string | null
   status: string
   cartorio: string | null
+  minuta_solicitada: boolean
+  guia_itcmd_paga: boolean
+  escritura_lavrada: boolean
+  registro_concluido: boolean
+  clausula_incomunicabilidade: boolean
+  clausula_impenhorabilidade: boolean
+  clausula_inalienabilidade: boolean
+  clausula_reversao: boolean
+  usufruto_extinto_em: string | null
+  usufruto_extinto_motivo: string | null
+  consolidacao_registrada: boolean
 }
 
 export default async function DoacoesPage({
@@ -27,12 +40,12 @@ export default async function DoacoesPage({
 }) {
   const supabase = createClient()
 
-  const { data: holdings } = await supabase.from('holdings').select('id, razao_social').order('razao_social')
+  const { data: holdings } = await supabase.from('holdings').select('id, razao_social, family_id').order('razao_social')
   const { data: socios } = await supabase.from('socios').select('id, nome, family_id').order('nome')
   const { data: families } = await supabase.from('families').select('id, name')
   const { data: doacoes } = await supabase
     .from('doacoes')
-    .select('id, holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, com_reserva_usufruto, data_prevista, status, cartorio')
+    .select('id, holding_id, doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, com_reserva_usufruto, data_prevista, status, cartorio, minuta_solicitada, guia_itcmd_paga, escritura_lavrada, registro_concluido, clausula_incomunicabilidade, clausula_impenhorabilidade, clausula_inalienabilidade, clausula_reversao, usufruto_extinto_em, usufruto_extinto_motivo, consolidacao_registrada')
     .order('data_prevista', { nullsFirst: false })
 
   const nomeFamilia = new Map((families ?? []).map((f) => [f.id, f.name]))
@@ -49,6 +62,13 @@ export default async function DoacoesPage({
   const emCartorio = lista.filter((d) => d.status === 'em_cartorio')
   const concluidas = lista.filter((d) => d.status === 'concluida')
   const itcmdTotal = lista.reduce((a, d) => a + Number(d.itcmd_estimado ?? 0), 0)
+  const consolidacoesPendentes = lista.filter(
+    (d) => d.usufruto_extinto_em && !d.consolidacao_registrada,
+  )
+  const familiaPorHolding = new Map((holdings ?? []).map((h) => [h.id, h.family_id]))
+  const familiasComDoacao = Array.from(
+    new Set(lista.map((d) => familiaPorHolding.get(d.holding_id)).filter(Boolean)),
+  ) as string[]
   const transferido = concluidas.reduce((a, d) => a + Number(d.valor_estimado ?? 0), 0)
 
   return (
@@ -58,6 +78,29 @@ export default async function DoacoesPage({
         title="Doações"
         description="Cronograma de doação de quotas em vida — o ritmo que realiza a economia de ITCMD e inventário prometida na proposta."
       />
+
+      {consolidacoesPendentes.length > 0 && (
+        <div className="mb-6 flex items-start gap-2 rounded-xl2 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <span>
+            <strong className="font-semibold">{consolidacoesPendentes.length} consolidação(ões) de usufruto pendente(s)</strong> — o
+            usufruto foi extinto e o registro da propriedade plena ainda não foi atualizado. Abra a doação em
+            <em> Operação</em> e conclua com o advogado/cartório.
+          </span>
+        </div>
+      )}
+
+      {familiasComDoacao.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Sucessão por família:</span>
+          {familiasComDoacao.map((fid) => (
+            <Link key={fid} href={`/app/doacoes/familia/${fid}`}
+              className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink-muted transition hover:bg-surface hover:text-ink">
+              {nomeFamilia.get(fid) ?? 'Família'} →
+            </Link>
+          ))}
+        </div>
+      )}
 
       {!temHoldings ? (
         <EmptyState>
@@ -202,7 +245,21 @@ function Grupo({
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
                   <span className="num">{d.quantidade_quotas} quotas</span>
                   <span>· {nomePorHolding.get(d.holding_id) ?? 'holding'}</span>
-                  {d.com_reserva_usufruto && <Pill>reserva de usufruto</Pill>}
+                  {d.com_reserva_usufruto && !d.usufruto_extinto_em && <Pill>usufruto vigente</Pill>}
+                  {d.usufruto_extinto_em && !d.consolidacao_registrada && (
+                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                      consolidação pendente
+                    </span>
+                  )}
+                  {d.usufruto_extinto_em && d.consolidacao_registrada && <Pill>propriedade consolidada</Pill>}
+                  {CLAUSULAS_DOACAO.filter((c) => d[c.campo as keyof Doacao]).map((c) => (
+                    <span key={c.sigla} title={c.label} className="rounded bg-navy/5 px-1.5 py-0.5 text-[10px] font-semibold text-navy">
+                      {c.sigla}
+                    </span>
+                  ))}
+                  <span className="text-ink-soft">
+                    execução {EXECUCAO_DOACAO.filter((e) => d[e.campo as keyof Doacao]).length}/4
+                  </span>
                   {d.cartorio ? <span>· {d.cartorio}</span> : null}
                 </div>
               </div>
@@ -210,12 +267,65 @@ function Grupo({
                 {d.valor_estimado != null && <div className="num text-ink">{formatarMoeda(Number(d.valor_estimado))}</div>}
                 {d.itcmd_estimado != null && <div className="num text-xs text-ink-soft">ITCMD {formatarMoeda(Number(d.itcmd_estimado))}</div>}
               </div>
+              <EditDialog title="Operação da doação" label="Operação">
+                <form className="space-y-4">
+                  <input type="hidden" name="id" value={d.id} />
+                  <input type="hidden" name="voltar" value="/app/doacoes" />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Checklist de execução</p>
+                    <div className="mt-2 space-y-2">
+                      {EXECUCAO_DOACAO.map((e) => (
+                        <label key={e.campo} className="flex items-center gap-2.5 text-sm text-ink">
+                          <input type="checkbox" name={e.campo} defaultChecked={!!d[e.campo as keyof Doacao]} className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+                          {e.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Cláusulas aplicadas (redigidas pelo advogado)</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {CLAUSULAS_DOACAO.map((c) => (
+                        <label key={c.campo} className="flex items-center gap-2 text-sm text-ink">
+                          <input type="checkbox" name={c.campo} defaultChecked={!!d[c.campo as keyof Doacao]} className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+                          {c.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {d.com_reserva_usufruto && (
+                    <div className="rounded-lg border border-line bg-surface/60 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Usufruto</p>
+                      <div className="mt-2 grid grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor={`ext_${d.id}`} className="block text-xs font-medium text-ink-muted">Extinto em</label>
+                          <input id={`ext_${d.id}`} name="usufruto_extinto_em" type="date" defaultValue={d.usufruto_extinto_em ?? ''} className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" />
+                        </div>
+                        <div>
+                          <label htmlFor={`mot_${d.id}`} className="block text-xs font-medium text-ink-muted">Motivo</label>
+                          <select id={`mot_${d.id}`} name="usufruto_extinto_motivo" defaultValue={d.usufruto_extinto_motivo ?? ''} className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm">
+                            <option value="">—</option>
+                            {Object.entries(LABEL_MOTIVO_EXTINCAO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+                        <input type="checkbox" name="consolidacao_registrada" defaultChecked={d.consolidacao_registrada} className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+                        Consolidação da propriedade plena registrada
+                      </label>
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <SubmitButton action={updateDoacaoExecucao}>Salvar operação</SubmitButton>
+                  </div>
+                </form>
+              </EditDialog>
               <form action={changeStatusDoacao}>
                 <input type="hidden" name="id" value={d.id} />
                 <input type="hidden" name="to" value={prox.to} />
-                <button className="whitespace-nowrap rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink">
+                <PendingButton className="whitespace-nowrap rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink">
                   {prox.label}
-                </button>
+                </PendingButton>
               </form>
               <DeleteButton action={deleteDoacao} id={d.id} label="esta doação" />
             </div>
