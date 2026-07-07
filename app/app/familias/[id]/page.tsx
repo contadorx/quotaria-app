@@ -7,9 +7,10 @@ import {
   LABEL_TIPO_SOCIETARIO,
   LABEL_STATUS_HOLDING,
   LABEL_PAPEL_FAMILIAR,
+  LABEL_ESTADO_CIVIL,
   LABEL_REGIME_BENS,
 } from '@/lib/format'
-import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily } from '../../actions'
+import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio } from '../../actions'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
 import { EditDialog } from '@/components/edit-dialog'
@@ -28,7 +29,7 @@ export default async function FamilyDetail({
   if (!family) notFound()
 
   const { data: socios } = await supabase
-    .from('socios').select('id, nome, papel_familiar, regime_bens, cpf')
+    .from('socios').select('id, nome, papel_familiar, regime_bens, cpf, estado_civil')
     .eq('family_id', params.id).order('nome')
 
   const { data: holdings } = await supabase
@@ -61,9 +62,7 @@ export default async function FamilyDetail({
         }
       />
 
-      {searchParams?.error && (
-        <p className="mb-6 text-sm font-medium text-red-600">{searchParams.error}</p>
-      )}
+      {searchParams?.error && <p className="mb-6 text-sm font-medium text-red-600">{searchParams.error}</p>}
 
       {/* SÓCIOS */}
       <SectionTitle>Sócios</SectionTitle>
@@ -110,6 +109,44 @@ export default async function FamilyDetail({
                   {so.papel_familiar && <Pill>{LABEL_PAPEL_FAMILIAR[so.papel_familiar]}</Pill>}
                   {so.regime_bens ? LABEL_REGIME_BENS[so.regime_bens] : ''}
                 </span>
+                <EditDialog title="Editar sócio" compact>
+                  <form className="grid gap-4 sm:grid-cols-2">
+                    <input type="hidden" name="id" value={so.id} />
+                    <input type="hidden" name="family_id" value={family.id} />
+                    <div>
+                      <Label htmlFor={`es_nome_${so.id}`}>Nome</Label>
+                      <input id={`es_nome_${so.id}`} name="nome" defaultValue={so.nome} required className={fieldClass} />
+                    </div>
+                    <div>
+                      <Label htmlFor={`es_cpf_${so.id}`}>CPF</Label>
+                      <input id={`es_cpf_${so.id}`} name="cpf" defaultValue={so.cpf ?? ''} className={fieldClass} />
+                    </div>
+                    <div>
+                      <Label htmlFor={`es_papel_${so.id}`}>Papel na família</Label>
+                      <select id={`es_papel_${so.id}`} name="papel_familiar" defaultValue={so.papel_familiar ?? ''} className={fieldClass}>
+                        <option value="">—</option>
+                        {Object.entries(LABEL_PAPEL_FAMILIAR).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor={`es_civil_${so.id}`}>Estado civil</Label>
+                      <select id={`es_civil_${so.id}`} name="estado_civil" defaultValue={so.estado_civil ?? ''} className={fieldClass}>
+                        <option value="">—</option>
+                        {Object.entries(LABEL_ESTADO_CIVIL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label htmlFor={`es_regime_${so.id}`}>Regime de bens</Label>
+                      <select id={`es_regime_${so.id}`} name="regime_bens" defaultValue={so.regime_bens ?? ''} className={fieldClass}>
+                        <option value="">—</option>
+                        {Object.entries(LABEL_REGIME_BENS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex justify-end sm:col-span-2">
+                      <SubmitButton action={updateSocio}>Salvar</SubmitButton>
+                    </div>
+                  </form>
+                </EditDialog>
                 <DeleteButton action={deleteSocio} id={so.id} label={`o sócio "${so.nome}"`} extra={{ family_id: family.id }} />
               </div>
             ))}

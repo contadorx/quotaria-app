@@ -562,3 +562,112 @@ export async function salvarFechamento(formData: FormData) {
   revalidatePath('/app/mes')
   redirect(`/app/mes?ano=${ano}&mes=${mes}`)
 }
+
+// -------------------------- Edições (entidades-filhas) --------------------------
+export async function updateSocio(formData: FormData) {
+  const id = s(formData, 'id')
+  const familyId = s(formData, 'family_id')
+  const dest = familyId ? `/app/familias/${familyId}` : '/app'
+  if (!id) redirect(dest)
+  const nome = s(formData, 'nome')
+  if (!nome) redirect(`${dest}?error=` + encodeURIComponent('Informe o nome do sócio.'))
+  const supabase = createClient()
+  const { error } = await supabase.from('socios').update({
+    nome,
+    cpf: orNull(s(formData, 'cpf')),
+    papel_familiar: orNull(s(formData, 'papel_familiar')) as PapelFamiliar | null,
+    estado_civil: orNull(s(formData, 'estado_civil')) as EstadoCivil | null,
+    regime_bens: orNull(s(formData, 'regime_bens')) as RegimeBens | null,
+    email: orNull(s(formData, 'email')),
+    telefone: orNull(s(formData, 'telefone')),
+  }).eq('id', id)
+  if (error) redirect(`${dest}?error=` + encodeURIComponent(error.message))
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function updateQuota(formData: FormData) {
+  const id = s(formData, 'id')
+  const holdingId = s(formData, 'holding_id')
+  const dest = holdingId ? `/app/holdings/${holdingId}` : '/app'
+  if (!id) redirect(dest)
+  const qtdRaw = s(formData, 'quantidade')
+  const pctRaw = s(formData, 'percentual')
+  const supabase = createClient()
+  const { error } = await supabase.from('quotas').update({
+    socio_id: s(formData, 'socio_id'),
+    quantidade: qtdRaw === '' ? 0 : Number(qtdRaw),
+    percentual: pctRaw === '' ? null : Number(pctRaw),
+    tipo_direito: (s(formData, 'tipo_direito') || 'plena') as TipoDireito,
+  }).eq('id', id)
+  if (error) redirect(`${dest}?error=` + encodeURIComponent(error.message))
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function updateBem(formData: FormData) {
+  const id = s(formData, 'id')
+  const holdingId = s(formData, 'holding_id')
+  const dest = holdingId ? `/app/holdings/${holdingId}` : '/app'
+  if (!id) redirect(dest)
+  const descricao = s(formData, 'descricao')
+  if (!descricao) redirect(`${dest}?error=` + encodeURIComponent('Informe a descrição.'))
+  const vcRaw = s(formData, 'valor_contabil')
+  const vmRaw = s(formData, 'valor_mercado')
+  const supabase = createClient()
+  const { error } = await supabase.from('bens').update({
+    tipo: (s(formData, 'tipo') || 'imovel') as TipoBem,
+    descricao,
+    valor_contabil: vcRaw === '' ? null : Number(vcRaw),
+    valor_mercado: vmRaw === '' ? null : Number(vmRaw),
+    matricula: orNull(s(formData, 'matricula')),
+    municipio_uf: orNull(s(formData, 'municipio_uf')),
+    data_aquisicao: orNull(s(formData, 'data_aquisicao')),
+    gera_receita: formData.get('gera_receita') === 'on',
+  }).eq('id', id)
+  if (error) redirect(`${dest}?error=` + encodeURIComponent(error.message))
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function updateClausula(formData: FormData) {
+  const id = s(formData, 'id')
+  const holdingId = s(formData, 'holding_id')
+  const dest = holdingId ? `/app/holdings/${holdingId}` : '/app'
+  if (!id) redirect(dest)
+  const tipo = s(formData, 'tipo') as TipoClausula
+  if (!tipo) redirect(`${dest}?error=` + encodeURIComponent('Selecione o tipo.'))
+  const supabase = createClient()
+  const { error } = await supabase.from('clausulas').update({
+    tipo,
+    descricao: orNull(s(formData, 'descricao')),
+    registrada_em: orNull(s(formData, 'registrada_em')),
+    responsavel: orNull(s(formData, 'responsavel')),
+  }).eq('id', id)
+  if (error) redirect(`${dest}?error=` + encodeURIComponent(error.message))
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+// -------------------------- Conformidade da Reforma (locadora) --------------------------
+export async function salvarConformidade(formData: FormData) {
+  const holdingId = s(formData, 'holding_id')
+  if (!holdingId) redirect('/app')
+  const dest = `/app/holdings/${holdingId}`
+  const supabase = createClient()
+  const { error } = await supabase.from('conformidade_reforma').upsert(
+    {
+      holding_id: holdingId,
+      nfse_cbs: formData.get('nfse_cbs') === 'on',
+      clausula_repasse: formData.get('clausula_repasse') === 'on',
+      credito_locatario: formData.get('credito_locatario') === 'on',
+      redutor_social: formData.get('redutor_social') === 'on',
+      regime_caixa: formData.get('regime_caixa') === 'on',
+      notes: orNull(s(formData, 'notes')),
+    },
+    { onConflict: 'holding_id' },
+  )
+  if (error) redirect(`${dest}?error=` + encodeURIComponent(error.message))
+  revalidatePath(dest)
+  redirect(dest)
+}

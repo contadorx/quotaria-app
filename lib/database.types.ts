@@ -565,6 +565,48 @@ export interface Database {
         }
         Relationships: []
       }
+      conformidade_reforma: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string
+          nfse_cbs: boolean
+          clausula_repasse: boolean
+          credito_locatario: boolean
+          redutor_social: boolean
+          regime_caixa: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id: string
+          nfse_cbs?: boolean
+          clausula_repasse?: boolean
+          credito_locatario?: boolean
+          redutor_social?: boolean
+          regime_caixa?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string
+          nfse_cbs?: boolean
+          clausula_repasse?: boolean
+          credito_locatario?: boolean
+          redutor_social?: boolean
+          regime_caixa?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

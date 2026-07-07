@@ -52,6 +52,9 @@ export default async function Relatorio({
   const doacoes = has
     ? (await supabase.from('doacoes').select('doador_id, donatario_id, quantidade_quotas, valor_estimado, itcmd_estimado, status, data_conclusao').in('holding_id', holdingIds)).data ?? []
     : []
+  const documentos = has
+    ? (await supabase.from('documentos').select('tipo').in('holding_id', holdingIds)).data ?? []
+    : []
 
   // eventos: inclui os das holdings da família E os marcos gerais (holding_id nulo)
   const { data: eventosAll } = await supabase
@@ -73,6 +76,10 @@ export default async function Relatorio({
   const hoje = new Date().toISOString().slice(0, 10)
   const atasAno = eventos.filter((e) => e.status === 'concluido' && noAno(e.data_prevista))
   const radar = eventos.filter((e) => e.status !== 'concluido' && e.data_prevista >= hoje).sort((a, b) => a.data_prevista.localeCompare(b.data_prevista))
+
+  const ESPERADOS_DOC = ['contrato_social', 'ata', 'acordo_quotistas', 'matricula']
+  const tiposPresentes = new Set<string>(documentos.map((d) => d.tipo))
+  const pctDossie = Math.round((ESPERADOS_DOC.filter((t) => tiposPresentes.has(t)).length / ESPERADOS_DOC.length) * 100)
 
   return (
     <div>
@@ -125,6 +132,16 @@ export default async function Relatorio({
           <div className="mt-4 flex justify-between rounded-lg bg-cream/60 px-4 py-3 text-sm">
             <span className="text-ink-muted">Patrimônio registrado (bens das holdings)</span>
             <span className="num font-semibold text-navy">{formatarMoeda(patrimonio)}</span>
+          </div>
+          <div className="mt-3">
+            <div className="mb-1 flex items-baseline justify-between text-sm">
+              <span className="text-ink-muted">Conformidade documental (dossiê)</span>
+              <span className="num font-semibold text-navy">{pctDossie}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-line">
+              <div className="h-full rounded-full bg-navy" style={{ width: `${pctDossie}%` }} />
+            </div>
+            <p className="mt-1 text-xs text-ink-soft">Contrato social, ata, acordo de quotistas e matrícula presentes no cofre.</p>
           </div>
         </Secao>
 

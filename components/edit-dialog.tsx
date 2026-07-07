@@ -6,25 +6,39 @@ import { Pencil, X } from 'lucide-react'
 export function EditDialog({
   title,
   label = 'Editar',
+  compact = false,
   children,
 }: {
   title: string
   label?: string
+  compact?: boolean
   children: React.ReactNode
 }) {
   const ref = useRef<HTMLDialogElement>(null)
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => ref.current?.showModal()}
-        title={title}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink transition hover:bg-surface"
-      >
-        <Pencil size={14} />
-        {label}
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          onClick={() => ref.current?.showModal()}
+          title={title}
+          aria-label={title}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-soft transition hover:bg-surface hover:text-navy"
+        >
+          <Pencil size={15} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => ref.current?.showModal()}
+          title={title}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink transition hover:bg-surface"
+        >
+          <Pencil size={14} />
+          {label}
+        </button>
+      )}
 
       <dialog
         ref={ref}
