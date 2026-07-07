@@ -38,8 +38,14 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mt-12 text-xs text-navy/40">
-        ContadorX · uso interno
+      <footer className="mt-12 flex items-center gap-4 text-xs text-navy/40">
+        <span>ContadorX · uso interno</span>
+        <a
+          href="/login"
+          className="text-navy/60 underline-offset-2 transition hover:text-navy hover:underline"
+        >
+          Entrar →
+        </a>
       </footer>
     </main>
   )
