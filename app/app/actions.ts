@@ -50,6 +50,96 @@ export async function createFamily(formData: FormData) {
   redirect('/app')
 }
 
+// Assistente de nova família: cria família → sócios → holding → quotas de uma vez.
+// Recebe um JSON em formData['payload']. Usa a sessão do usuário (RLS preenche
+// accountant_id/organization_id). Insere sócios um a um para mapear índice → id.
+type PayloadGuiado = {
+  familia: { name: string; notes?: string }
+  socios: { nome: string; cpf?: string; papel_familiar?: string }[]
+  holding: { razao_social: string; nome_fantasia?: string; tipo_societario?: string; cnpj?: string } | null
+  quotas: { socioIndex: number; percentual?: string; tipo_direito?: string }[]
+}
+
+export async function criarFamiliaGuiada(formData: FormData) {
+  let payload: PayloadGuiado
+  try {
+    payload = JSON.parse(s(formData, 'payload')) as PayloadGuiado
+  } catch {
+    redirect('/app?error=' + encodeURIComponent('Dados do assistente inválidos.'))
+  }
+
+  const nome = payload!.familia?.name?.trim()
+  if (!nome) redirect('/app?error=' + encodeURIComponent('Informe o nome da família.'))
+
+  const supabase = createClient()
+
+  // 1) família
+  const { data: fam, error: eFam } = await supabase
+    .from('families')
+    .insert({ name: nome, notes: payload!.familia.notes?.trim() || null })
+    .select('id')
+    .single()
+  if (eFam || !fam) redirect('/app?error=' + encodeURIComponent(eFam?.message ?? 'Falha ao criar a família.'))
+  const familyId = fam.id
+
+  // 2) sócios (um a um → mapear índice para id)
+  const socioIds: (string | null)[] = []
+  for (const so of payload!.socios ?? []) {
+    if (!so.nome?.trim()) { socioIds.push(null); continue }
+    const { data, error } = await supabase
+      .from('socios')
+      .insert({
+        family_id: familyId,
+        nome: so.nome.trim(),
+        cpf: so.cpf?.trim() || null,
+        papel_familiar: (so.papel_familiar || null) as PapelFamiliar | null,
+      })
+      .select('id')
+      .single()
+    socioIds.push(error ? null : data!.id)
+  }
+
+  // 3) holding (opcional)
+  let holdingId: string | null = null
+  if (payload!.holding && payload!.holding.razao_social?.trim()) {
+    const h = payload!.holding
+    const { data, error } = await supabase
+      .from('holdings')
+      .insert({
+        family_id: familyId,
+        razao_social: h.razao_social.trim(),
+        nome_fantasia: h.nome_fantasia?.trim() || null,
+        tipo_societario: (h.tipo_societario || 'ltda') as TipoSocietario,
+        cnpj: h.cnpj?.trim() || null,
+      })
+      .select('id')
+      .single()
+    if (!error && data) holdingId = data.id
+  }
+
+  // 4) quotas (só se houver holding + sócios mapeados)
+  if (holdingId && (payload!.quotas ?? []).length > 0) {
+    const linhas = (payload!.quotas ?? [])
+      .map((q) => {
+        const sid = socioIds[q.socioIndex]
+        if (!sid) return null
+        const pct = q.percentual && q.percentual !== '' ? Number(q.percentual) : null
+        return {
+          holding_id: holdingId!,
+          socio_id: sid,
+          quantidade: pct ?? 0,
+          percentual: pct,
+          tipo_direito: (q.tipo_direito || 'plena') as TipoDireito,
+        }
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+    if (linhas.length > 0) await supabase.from('quotas').insert(linhas)
+  }
+
+  revalidatePath('/app')
+  redirect(`/app/familias/${familyId}`)
+}
+
 // -------------------------- Holdings --------------------------
 export async function createHolding(formData: FormData) {
   const familyId = s(formData, 'family_id')
