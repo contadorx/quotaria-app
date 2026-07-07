@@ -65,6 +65,13 @@ export default async function HoldingDetail({
 
   const nomePorSocio = new Map((socios ?? []).map((so) => [so.id, so.nome]))
   const temSocios = (socios ?? []).length > 0
+
+  // totalizador do cap table: só propriedade (plena + nua-propriedade); usufruto é direito sobre a fração
+  const quotasProp = (quotas ?? []).filter((q) => q.tipo_direito === 'plena' || q.tipo_direito === 'nua_propriedade')
+  const todasComPct = quotasProp.length > 0 && quotasProp.every((q) => q.percentual != null)
+  const somaPct = quotasProp.reduce((a, q) => a + Number(q.percentual ?? 0), 0)
+  const somaQtd = quotasProp.reduce((a, q) => a + Number(q.quantidade), 0)
+  const fecha = Math.abs(somaPct - 100) < 0.01
   const holdingId = holding.id
   const faroisHolding = await faroisDaFamilia(supabase, holding.family_id, [holdingId])
 
@@ -207,7 +214,34 @@ export default async function HoldingDetail({
         {!quotas || quotas.length === 0 ? (
           <EmptyState>Nenhuma quota lançada ainda.</EmptyState>
         ) : (
-          <ListCard>
+          <>
+            {quotasProp.length > 0 && (
+              <div
+                className={`mb-2 flex items-center justify-between rounded-xl border px-4 py-2.5 text-sm ${
+                  todasComPct
+                    ? fecha
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-amber-200 bg-amber-50 text-amber-800'
+                    : 'border-line bg-surface text-ink-muted'
+                }`}
+              >
+                <span className="font-medium">Propriedade atribuída</span>
+                <span className="font-semibold">
+                  {todasComPct ? (
+                    fecha ? (
+                      'cap table fecha em 100% ✓'
+                    ) : somaPct < 100 ? (
+                      `${somaPct.toLocaleString('pt-BR')}% · faltam ${(100 - somaPct).toLocaleString('pt-BR')}%`
+                    ) : (
+                      `${somaPct.toLocaleString('pt-BR')}% · excede em ${(somaPct - 100).toLocaleString('pt-BR')}%`
+                    )
+                  ) : (
+                    `${somaQtd.toLocaleString('pt-BR')} quotas · defina o % para validar 100%`
+                  )}
+                </span>
+              </div>
+            )}
+            <ListCard>
             {(quotas ?? []).map((q) => (
               <div key={q.id} className="flex items-center gap-2 px-5 py-3 text-sm">
                 <span className="flex-1 font-medium text-ink">{nomePorSocio.get(q.socio_id) ?? 'Sócio removido'}</span>
@@ -247,6 +281,7 @@ export default async function HoldingDetail({
               </div>
             ))}
           </ListCard>
+          </>
         )}
       </div>
 
