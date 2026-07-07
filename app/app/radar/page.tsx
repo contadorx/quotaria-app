@@ -79,7 +79,7 @@ export default async function RadarPage({
           </label>
           <div className="sm:col-span-2 lg:col-span-4">
             <SubmitButton action={createRadarCliente}>Qualificar cliente</SubmitButton>
-            <span className="ml-3 text-xs text-ink-soft">Ou crie só com o nome e importe a DIRPF (PDF) na página do cliente.</span>
+            <span className="ml-3 text-xs text-ink-soft">Ou crie só com o nome e importe as DIRPFs da família (titular + cônjuge) na página do cliente.</span>
           </div>
         </form>
         {searchParams?.error && <p className="mt-3 text-sm font-medium text-red-600">{searchParams.error}</p>}

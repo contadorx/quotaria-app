@@ -801,9 +801,10 @@ export async function updateRadarSinais(formData: FormData) {
     socio_pj: boolean
     recebe_dividendos: boolean
     n_herdeiros: number
-    uf: string
-    itcmd_pct: number
-    inventario_pct: number
+    uf?: string
+    itcmd_pct?: number
+    inventario_pct?: number
+    notes?: string
     lgpd_confirmado_em?: string
   } = {
     n_imoveis: Math.round(num('n_imoveis')),
@@ -812,10 +813,13 @@ export async function updateRadarSinais(formData: FormData) {
     socio_pj: formData.get('socio_pj') === 'on',
     recebe_dividendos: formData.get('recebe_dividendos') === 'on',
     n_herdeiros: Math.round(num('n_herdeiros')),
-    uf: s(formData, 'uf') || 'SP',
-    itcmd_pct: num('itcmd_pct') || 4,
-    inventario_pct: num('inventario_pct') || 12,
   }
+  // uf/premissas: só quando o formulário as envia (o import da DIRPF não envia — preserva o que já está salvo)
+  if (formData.has('uf')) payload.uf = s(formData, 'uf') || 'SP'
+  if (formData.has('itcmd_pct')) payload.itcmd_pct = num('itcmd_pct') || 4
+  if (formData.has('inventario_pct')) payload.inventario_pct = num('inventario_pct') || 12
+  const notas = s(formData, 'notes')
+  if (notas) payload.notes = notas
   if (lgpd) payload.lgpd_confirmado_em = new Date().toISOString()
   const { error } = await supabase.from('radar_clientes').update(payload).eq('id', id)
   if (error) redirect(`/app/radar/${id}?error=` + encodeURIComponent(error.message))
