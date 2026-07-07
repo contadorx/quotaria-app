@@ -39,6 +39,37 @@ export default async function AppHome({
 
   return (
     <div>
+      {nFamilias === 0 ? (
+        <div className="mx-auto max-w-2xl py-6">
+          <PageHeader eyebrow="Bem-vindo ao Quotaria" title="Vamos montar a primeira família" description="Em poucos minutos você tem uma família estruturada e pronta pra operar. Comece pelo assistente — ele conduz o cadastro do começo ao fim." />
+
+          <Card className="p-6">
+            <ol className="space-y-4">
+              <PassoOnboard n={1} titulo="Cadastre a família e a holding" texto="O assistente puxa os dados da holding pelo CNPJ e organiza sócios e quotas num fluxo só." />
+              <PassoOnboard n={2} titulo="Registre a operação" texto="Distribuições com deliberação, o cronograma de doações e o fechamento mensal de cada holding." />
+              <PassoOnboard n={3} titulo="Gere o que a família vê" texto="Diagnóstico, extrato mensal e relatório anual — com a sua marca, num botão." />
+            </ol>
+            <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-line pt-5">
+              <Link href="/app/nova-familia" className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-soft">
+                Começar pelo assistente →
+              </Link>
+              <form className="flex items-end gap-2">
+                <div>
+                  <Label htmlFor="name">ou cadastro rápido</Label>
+                  <input id="name" name="name" required placeholder="Ex.: Família Andrade" className={fieldClass} />
+                </div>
+                <SubmitButton action={createFamily} variant="ghost">Criar</SubmitButton>
+              </form>
+            </div>
+            {searchParams?.error && <p className="mt-3 text-sm font-medium text-red-600">{searchParams.error}</p>}
+          </Card>
+
+          <p className="mt-4 text-center text-xs text-ink-soft">
+            Já tem uma carteira grande? Dá pra carregar um caso de exemplo completo pelo seed de teste antes de trazer os dados reais.
+          </p>
+        </div>
+      ) : (
+        <>
       <PageHeader eyebrow="Painel" title="Sua carteira" description="A infraestrutura do honorário premium — o pulso de todas as famílias num lugar." />
 
       {/* O QUE PRECISA DE VOCÊ — a agenda do escritório */}
@@ -169,7 +200,21 @@ export default async function AppHome({
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
+  )
+}
+
+function PassoOnboard({ n, titulo, texto }: { n: number; titulo: string; texto: string }) {
+  return (
+    <li className="flex gap-3">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-bold text-white">{n}</span>
+      <div>
+        <p className="text-sm font-semibold text-ink">{titulo}</p>
+        <p className="text-sm text-ink-muted">{texto}</p>
+      </div>
+    </li>
   )
 }
 
