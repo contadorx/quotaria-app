@@ -32,6 +32,7 @@ export default async function ConfiguracoesPage({
       <div className="mb-6 flex gap-2 text-sm">
         <span className="rounded-lg bg-navy px-3 py-1.5 font-medium text-white">Dados e marca</span>
         <a href="/app/configuracoes/equipe" className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink-muted transition hover:bg-surface">Equipe</a>
+        <a href="/app/configuracoes/assinatura" className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink-muted transition hover:bg-surface">Assinatura</a>
       </div>
 
       {!souAdmin && (
