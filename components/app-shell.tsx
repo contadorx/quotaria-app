@@ -7,11 +7,13 @@ export function AppShell({
   email,
   orgNome,
   colapsadoInicial,
+  superAdmin = false,
   children,
 }: {
   email: string
   orgNome: string
   colapsadoInicial: boolean
+  superAdmin?: boolean
   children: React.ReactNode
 }) {
   const [colapsado, setColapsado] = useState(colapsadoInicial)
@@ -27,7 +29,7 @@ export function AppShell({
 
   return (
     <div className="min-h-[100dvh]">
-      <Sidebar email={email} orgNome={orgNome} colapsado={colapsado} onToggle={toggle} />
+      <Sidebar email={email} orgNome={orgNome} colapsado={colapsado} onToggle={toggle} superAdmin={superAdmin} />
       <MobileHeader />
       <div className={`transition-all duration-200 ${colapsado ? 'md:pl-[72px]' : 'md:pl-[240px]'}`}>
         <main className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">

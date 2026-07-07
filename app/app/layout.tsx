@@ -23,6 +23,12 @@ export default async function AppLayout({
     .eq('id', orgId)
     .single()
 
+  const { data: membro } = await supabase
+    .from('organization_members')
+    .select('super_admin')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
   const colapsadoInicial = cookies().get('quotaria_sidebar')?.value === 'col'
 
   return (
@@ -30,6 +36,7 @@ export default async function AppLayout({
       email={user.email ?? ''}
       orgNome={org?.nome ?? 'Escritório'}
       colapsadoInicial={colapsadoInicial}
+      superAdmin={membro?.super_admin === true}
     >
       {children}
     </AppShell>

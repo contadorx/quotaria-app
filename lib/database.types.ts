@@ -802,6 +802,19 @@ export interface Database {
           logo_url: string | null
           cor_primaria: string | null
           cor_secundaria: string | null
+          assinatura_status: string
+          plano: string
+          valor_mensal: number
+          ciclo_cobranca: string
+          trial_ate: string | null
+          bonus_ate: string | null
+          proximo_vencimento: string | null
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
+          is_teste: boolean
+          parceiro_ref: string | null
+          obs_admin: string | null
+          ativada_em: string | null
           created_at: string
           updated_at: string
         }
@@ -815,6 +828,19 @@ export interface Database {
           logo_url?: string | null
           cor_primaria?: string | null
           cor_secundaria?: string | null
+          assinatura_status?: string
+          plano?: string
+          valor_mensal?: number
+          ciclo_cobranca?: string
+          trial_ate?: string | null
+          bonus_ate?: string | null
+          proximo_vencimento?: string | null
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          is_teste?: boolean
+          parceiro_ref?: string | null
+          obs_admin?: string | null
+          ativada_em?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -828,8 +854,300 @@ export interface Database {
           logo_url?: string | null
           cor_primaria?: string | null
           cor_secundaria?: string | null
+          assinatura_status?: string
+          plano?: string
+          valor_mensal?: number
+          ciclo_cobranca?: string
+          trial_ate?: string | null
+          bonus_ate?: string | null
+          proximo_vencimento?: string | null
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          is_teste?: boolean
+          parceiro_ref?: string | null
+          obs_admin?: string | null
+          ativada_em?: string | null
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      cobranca_config: {
+        Row: { id: number; ativa: boolean; atualizado_em: string }
+        Insert: { id?: number; ativa?: boolean; atualizado_em?: string }
+        Update: { id?: number; ativa?: boolean; atualizado_em?: string }
+        Relationships: []
+      }
+      cobranca_passos: {
+        Row: {
+          id: string
+          quando: number
+          assunto: string
+          corpo: string
+          botao_texto: string
+          ativo: boolean
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          quando: number
+          assunto: string
+          corpo: string
+          botao_texto?: string
+          ativo?: boolean
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          quando?: number
+          assunto?: string
+          corpo?: string
+          botao_texto?: string
+          ativo?: boolean
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      cobranca_envios: {
+        Row: {
+          id: string
+          organization_id: string
+          vencimento: string
+          quando: number
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          vencimento: string
+          quando: number
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          vencimento?: string
+          quando?: number
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      comunicacao_config: {
+        Row: { id: number; ativa: boolean; atualizado_em: string }
+        Insert: { id?: number; ativa?: boolean; atualizado_em?: string }
+        Update: { id?: number; ativa?: boolean; atualizado_em?: string }
+        Relationships: []
+      }
+      comunicacao_passos: {
+        Row: {
+          id: string
+          momento: string
+          quando: number
+          assunto: string
+          corpo: string
+          ativo: boolean
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          momento: string
+          quando: number
+          assunto: string
+          corpo: string
+          ativo?: boolean
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          momento?: string
+          quando?: number
+          assunto?: string
+          corpo?: string
+          ativo?: boolean
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      comunicacao_envios: {
+        Row: {
+          id: string
+          organization_id: string
+          momento: string
+          quando: number
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          momento: string
+          quando: number
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          momento?: string
+          quando?: number
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      faq: {
+        Row: {
+          id: string
+          categoria: string
+          pergunta: string
+          resposta: string
+          destaque: boolean
+          publicado: boolean
+          ordem: number
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          categoria?: string
+          pergunta: string
+          resposta: string
+          destaque?: boolean
+          publicado?: boolean
+          ordem?: number
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          categoria?: string
+          pergunta?: string
+          resposta?: string
+          destaque?: boolean
+          publicado?: boolean
+          ordem?: number
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      suporte_conversas: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          assunto: string
+          escalada: boolean
+          status: string
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          assunto?: string
+          escalada?: boolean
+          status?: string
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          assunto?: string
+          escalada?: boolean
+          status?: string
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      suporte_mensagens: {
+        Row: {
+          id: string
+          conversa_id: string
+          autor: string
+          texto: string
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          conversa_id: string
+          autor: string
+          texto: string
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          conversa_id?: string
+          autor?: string
+          texto?: string
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      assistente_config: {
+        Row: {
+          id: number
+          system_prompt: string | null
+          modelo: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          id?: number
+          system_prompt?: string | null
+          modelo?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          id?: number
+          system_prompt?: string | null
+          modelo?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      feedbacks: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          texto: string
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          texto: string
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          texto?: string
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      ia_uso: {
+        Row: {
+          id: string
+          organization_id: string | null
+          contexto: string
+          ok: boolean
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          contexto?: string
+          ok?: boolean
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          contexto?: string
+          ok?: boolean
+          criado_em?: string
         }
         Relationships: []
       }
@@ -840,6 +1158,7 @@ export interface Database {
           user_id: string
           email: string | null
           role: PapelMembro
+          super_admin: boolean
           created_at: string
         }
         Insert: {
@@ -917,6 +1236,101 @@ export interface Database {
       aceitar_convite: {
         Args: { p_token: string }
         Returns: undefined
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      painel_negocio: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_atualizar_assinatura: {
+        Args: {
+          p_org: string
+          p_status: string
+          p_plano: string
+          p_valor: number
+          p_ciclo: string
+          p_trial_ate: string | null
+          p_bonus_ate: string | null
+          p_proximo_vencimento: string | null
+          p_is_teste: boolean
+          p_parceiro_ref: string | null
+          p_obs: string | null
+          p_asaas_customer: string | null
+          p_asaas_subscription: string | null
+        }
+        Returns: undefined
+      }
+      admin_reguas: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_regua_config: {
+        Args: { p_tipo: string; p_ativa: boolean }
+        Returns: undefined
+      }
+      admin_regua_passo_salvar: {
+        Args: {
+          p_tipo: string
+          p_id: string | null
+          p_quando: number
+          p_momento: string | null
+          p_assunto: string
+          p_corpo: string
+          p_botao: string | null
+          p_ativo: boolean
+        }
+        Returns: undefined
+      }
+      admin_regua_passo_excluir: {
+        Args: { p_tipo: string; p_id: string }
+        Returns: undefined
+      }
+      registrar_ia_uso: {
+        Args: { p_contexto: string; p_ok: boolean }
+        Returns: undefined
+      }
+      admin_suporte: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_suporte_responder: {
+        Args: { p_conversa: string; p_texto: string }
+        Returns: undefined
+      }
+      admin_suporte_status: {
+        Args: { p_conversa: string; p_status: string }
+        Returns: undefined
+      }
+      admin_faq_salvar: {
+        Args: {
+          p_id: string | null
+          p_categoria: string | null
+          p_pergunta: string
+          p_resposta: string
+          p_destaque: boolean
+          p_publicado: boolean
+          p_ordem: number
+        }
+        Returns: undefined
+      }
+      admin_faq_excluir: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      admin_assistente_salvar: {
+        Args: { p_prompt: string | null; p_modelo: string | null }
+        Returns: undefined
+      }
+      admin_assistente: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_feedbacks: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
     }
     Enums: {

@@ -12,6 +12,8 @@ import {
   FolderClosed,
   FileText,
   Settings,
+  HelpCircle,
+  Briefcase,
   LogOut,
   ChevronsLeft,
   ChevronsRight,
@@ -70,6 +72,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     match: (p) => p.startsWith('/app/relatorios'),
   },
   {
+    href: '/app/ajuda',
+    label: 'Ajuda',
+    icon: HelpCircle,
+    match: (p) => p.startsWith('/app/ajuda'),
+  },
+  {
     href: '/app/configuracoes',
     label: 'Configurações',
     icon: Settings,
@@ -84,11 +92,13 @@ export function Sidebar({
   orgNome,
   colapsado,
   onToggle,
+  superAdmin = false,
 }: {
   email: string
   orgNome: string
   colapsado: boolean
   onToggle: () => void
+  superAdmin?: boolean
 }) {
   const pathname = usePathname()
 
@@ -133,7 +143,10 @@ export function Sidebar({
 
       {/* navegação */}
       <nav className={`flex flex-1 flex-col gap-1 ${colapsado ? 'items-center' : ''}`}>
-        {NAV.map(({ href, label, icon: Icon, match }) => (
+        {(superAdmin
+          ? [...NAV, { href: '/app/admin', label: 'Negócio', icon: Briefcase, match: (p: string) => p.startsWith('/app/admin') }]
+          : NAV
+        ).map(({ href, label, icon: Icon, match }) => (
           <NavItem key={href} href={href} label={label} Icon={Icon} active={match(pathname)} colapsado={colapsado} />
         ))}
 
