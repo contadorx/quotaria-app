@@ -93,3 +93,9 @@ export const LABEL_TIPO_DISTRIBUICAO: Record<string, string> = {
   jcp: 'JCP',
   outro: 'Outro',
 }
+
+export const LABEL_STATUS_DOACAO: Record<string, string> = {
+  planejada: 'Planejada',
+  em_cartorio: 'Em cartório',
+  concluida: 'Concluída',
+}

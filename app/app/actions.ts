@@ -16,6 +16,7 @@ import type {
   TipoEvento,
   StatusEvento,
   TipoDistribuicao,
+  StatusDoacao,
 } from '@/lib/database.types'
 
 export async function signout() {
@@ -440,4 +441,60 @@ export async function deleteDistribuicao(formData: FormData) {
   await supabase.from('distribuicoes').delete().eq('id', id)
   revalidatePath('/app/distribuicoes')
   redirect('/app/distribuicoes')
+}
+
+// -------------------------- Doações (sucessão) --------------------------
+export async function createDoacao(formData: FormData) {
+  const holdingId = s(formData, 'holding_id')
+  if (!holdingId) {
+    redirect('/app/doacoes?error=' + encodeURIComponent('Selecione a holding.'))
+  }
+  const qtdRaw = s(formData, 'quantidade_quotas')
+  const valorRaw = s(formData, 'valor_estimado')
+  const itcmdRaw = s(formData, 'itcmd_estimado')
+
+  const supabase = createClient()
+  const { error } = await supabase.from('doacoes').insert({
+    holding_id: holdingId,
+    doador_id: orNull(s(formData, 'doador_id')),
+    donatario_id: orNull(s(formData, 'donatario_id')),
+    quantidade_quotas: qtdRaw === '' ? 0 : Number(qtdRaw),
+    valor_estimado: valorRaw === '' ? null : Number(valorRaw),
+    itcmd_estimado: itcmdRaw === '' ? null : Number(itcmdRaw),
+    com_reserva_usufruto: formData.get('com_reserva_usufruto') === 'on',
+    data_prevista: orNull(s(formData, 'data_prevista')),
+    status: (s(formData, 'status') || 'planejada') as StatusDoacao,
+    cartorio: orNull(s(formData, 'cartorio')),
+    notes: orNull(s(formData, 'notes')),
+  })
+  if (error) redirect('/app/doacoes?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/doacoes')
+  redirect('/app/doacoes')
+}
+
+export async function changeStatusDoacao(formData: FormData) {
+  const id = s(formData, 'id')
+  const to = s(formData, 'to') as StatusDoacao
+  if (!id || !['planejada', 'em_cartorio', 'concluida'].includes(to)) {
+    redirect('/app/doacoes')
+  }
+  const supabase = createClient()
+  await supabase
+    .from('doacoes')
+    .update({
+      status: to,
+      data_conclusao: to === 'concluida' ? new Date().toISOString().slice(0, 10) : null,
+    })
+    .eq('id', id)
+  revalidatePath('/app/doacoes')
+  redirect('/app/doacoes')
+}
+
+export async function deleteDoacao(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/doacoes')
+  const supabase = createClient()
+  await supabase.from('doacoes').delete().eq('id', id)
+  revalidatePath('/app/doacoes')
+  redirect('/app/doacoes')
 }

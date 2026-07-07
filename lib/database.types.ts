@@ -56,6 +56,8 @@ export type StatusEvento = 'pendente' | 'concluido'
 
 export type TipoDistribuicao = 'lucros' | 'jcp' | 'outro'
 
+export type StatusDoacao = 'planejada' | 'em_cartorio' | 'concluida'
+
 export interface Database {
   public: {
     Tables: {
@@ -407,6 +409,63 @@ export interface Database {
           proporcional?: boolean
           deliberacao?: string | null
           data_deliberacao?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      doacoes: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string
+          doador_id: string | null
+          donatario_id: string | null
+          quantidade_quotas: number
+          valor_estimado: number | null
+          itcmd_estimado: number | null
+          com_reserva_usufruto: boolean
+          data_prevista: string | null
+          status: StatusDoacao
+          data_conclusao: string | null
+          cartorio: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id: string
+          doador_id?: string | null
+          donatario_id?: string | null
+          quantidade_quotas?: number
+          valor_estimado?: number | null
+          itcmd_estimado?: number | null
+          com_reserva_usufruto?: boolean
+          data_prevista?: string | null
+          status?: StatusDoacao
+          data_conclusao?: string | null
+          cartorio?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string
+          doador_id?: string | null
+          donatario_id?: string | null
+          quantidade_quotas?: number
+          valor_estimado?: number | null
+          itcmd_estimado?: number | null
+          com_reserva_usufruto?: boolean
+          data_prevista?: string | null
+          status?: StatusDoacao
+          data_conclusao?: string | null
+          cartorio?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string

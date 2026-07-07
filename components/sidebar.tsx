@@ -6,6 +6,7 @@ import {
   Users,
   CalendarClock,
   ArrowLeftRight,
+  Gift,
   FolderClosed,
   FileText,
   LogOut,
@@ -34,6 +35,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
     label: 'Distribuições',
     icon: ArrowLeftRight,
     match: (p) => p.startsWith('/app/distribuicoes'),
+  },
+  {
+    href: '/app/doacoes',
+    label: 'Doações',
+    icon: Gift,
+    match: (p) => p.startsWith('/app/doacoes'),
   },
 ]
 
