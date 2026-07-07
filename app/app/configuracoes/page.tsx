@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { updateOrganization } from '../actions'
+import { updateOrganization, updateAssinaturaProvedor } from '../actions'
 import { PageHeader, Card, Label, SubmitButton, fieldClass } from '@/components/ui'
 
 export default async function ConfiguracoesPage({
@@ -14,7 +14,7 @@ export default async function ConfiguracoesPage({
 
   const { data: org } = await supabase
     .from('organizations')
-    .select('id, nome, cnpj, crc, email_contato, telefone, logo_url, cor_primaria')
+    .select('id, nome, cnpj, crc, email_contato, telefone, logo_url, cor_primaria, assinatura_provedor, assinatura_token')
     .eq('id', orgId)
     .single()
   if (!org) redirect('/onboarding')
@@ -90,6 +90,50 @@ export default async function ConfiguracoesPage({
           {souAdmin && (
             <div className="sm:col-span-2">
               <SubmitButton action={updateOrganization}>Salvar configurações</SubmitButton>
+            </div>
+          )}
+        </form>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h2 className="text-base font-bold text-navy">Assinatura das minutas</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Por padrão você gera a minuta, assina na ferramenta que já usa e arquiva no cofre. Se quiser
+          enviar com um clique, conecte a sua conta ZapSign — o custo da assinatura fica na sua conta.
+        </p>
+        <form className="mt-4 grid gap-4 sm:grid-cols-2">
+          <input type="hidden" name="id" value={org.id} />
+          <div>
+            <Label htmlFor="assinatura_provedor">Envio automático</Label>
+            <select
+              id="assinatura_provedor"
+              name="assinatura_provedor"
+              defaultValue={org.assinatura_provedor ?? 'nenhum'}
+              disabled={!souAdmin}
+              className={fieldClass}
+            >
+              <option value="nenhum">Manual (gero e assino onde eu quiser)</option>
+              <option value="zapsign">ZapSign (envio direto pela minha conta)</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="assinatura_token">Token da API ZapSign</Label>
+            <input
+              id="assinatura_token"
+              name="assinatura_token"
+              type="password"
+              autoComplete="off"
+              placeholder={org.assinatura_token ? '•••••••• (salvo — deixe em branco para manter)' : 'cole o token da sua conta'}
+              disabled={!souAdmin}
+              className={fieldClass}
+            />
+            <p className="mt-1 text-[11px] text-ink-soft">
+              Em Configurações da conta no ZapSign → API. Para remover, digite <strong>REMOVER</strong>.
+            </p>
+          </div>
+          {souAdmin && (
+            <div className="sm:col-span-2">
+              <SubmitButton action={updateAssinaturaProvedor}>Salvar assinatura</SubmitButton>
             </div>
           )}
         </form>

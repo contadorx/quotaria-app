@@ -3,10 +3,11 @@ import { ArrowRight, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarDataISO, formatarMoeda, LABEL_STATUS_DOACAO, LABEL_MOTIVO_EXTINCAO, CLAUSULAS_DOACAO, EXECUCAO_DOACAO } from '@/lib/format'
 import { createDoacao, changeStatusDoacao, deleteDoacao, updateDoacaoExecucao, updateDoacaoCronograma } from '../actions'
-import { PageHeader, Card, EmptyState, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
+import { PageHeader, Card, EmptyState, SubmitButton, Pill } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
 import { EditDialog } from '@/components/edit-dialog'
 import { PendingButton } from '@/components/submit-button'
+import { FormNovaDoacao } from '@/components/form-nova-doacao'
 
 type Doacao = {
   id: string
@@ -52,9 +53,6 @@ export default async function DoacoesPage({
 
   const nomeFamilia = new Map((families ?? []).map((f) => [f.id, f.name]))
   const nomePorHolding = new Map((holdings ?? []).map((h) => [h.id, h.razao_social]))
-  const socioLabel = new Map(
-    (socios ?? []).map((s) => [s.id, `${s.nome}${nomeFamilia.get(s.family_id) ? ` · ${nomeFamilia.get(s.family_id)}` : ''}`]),
-  )
   const socioNome = new Map((socios ?? []).map((s) => [s.id, s.nome]))
 
   const temHoldings = (holdings ?? []).length > 0
@@ -125,61 +123,7 @@ export default async function DoacoesPage({
       ) : (
         <>
           <Card className="p-5">
-            <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="lg:col-span-2">
-                <Label htmlFor="holding_id">Holding</Label>
-                <select id="holding_id" name="holding_id" required className={fieldClass}>
-                  {(holdings ?? []).map((h) => <option key={h.id} value={h.id}>{h.razao_social}</option>)}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="doador_id">Doador</Label>
-                <select id="doador_id" name="doador_id" className={fieldClass}>
-                  <option value="">—</option>
-                  {(socios ?? []).map((s) => <option key={s.id} value={s.id}>{socioLabel.get(s.id)}</option>)}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="donatario_id">Donatário</Label>
-                <select id="donatario_id" name="donatario_id" className={fieldClass}>
-                  <option value="">—</option>
-                  {(socios ?? []).map((s) => <option key={s.id} value={s.id}>{socioLabel.get(s.id)}</option>)}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="quantidade_quotas">Quotas</Label>
-                <input id="quantidade_quotas" name="quantidade_quotas" type="number" step="0.0001" min="0" placeholder="250" className={fieldClass} />
-              </div>
-              <div>
-                <Label htmlFor="valor_estimado">Valor estimado</Label>
-                <input id="valor_estimado" name="valor_estimado" type="number" step="0.01" min="0" placeholder="300000" className={fieldClass} />
-              </div>
-              <div>
-                <Label htmlFor="itcmd_estimado">ITCMD estimado</Label>
-                <input id="itcmd_estimado" name="itcmd_estimado" type="number" step="0.01" min="0" placeholder="12000" className={fieldClass} />
-              </div>
-              <div>
-                <Label htmlFor="data_prevista">Data prevista</Label>
-                <input id="data_prevista" name="data_prevista" type="date" className={fieldClass} />
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <select id="status" name="status" className={fieldClass}>
-                  {Object.entries(LABEL_STATUS_DOACAO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              </div>
-              <div className="lg:col-span-2">
-                <Label htmlFor="cartorio">Cartório (opcional)</Label>
-                <input id="cartorio" name="cartorio" placeholder="Ex.: 2º Tabelião de Notas" className={fieldClass} />
-              </div>
-              <label className="flex items-center gap-2 text-sm text-ink-muted sm:col-span-2 lg:col-span-4">
-                <input type="checkbox" name="com_reserva_usufruto" className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
-                Com reserva de usufruto (doa a nua-propriedade, mantém o usufruto)
-              </label>
-              <div className="sm:col-span-2 lg:col-span-4">
-                <SubmitButton action={createDoacao}>Adicionar ao cronograma</SubmitButton>
-              </div>
-            </form>
+            <FormNovaDoacao holdings={holdings ?? []} socios={socios ?? []} familias={families ?? []} />
             {searchParams?.error && <p className="mt-3 text-sm font-medium text-red-600">{searchParams.error}</p>}
           </Card>
 

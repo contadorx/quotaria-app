@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Check, AlertTriangle } from 'lucide-react'
+import { Check, AlertTriangle, FileText, FileSignature } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import {
   formatarData,
@@ -87,6 +87,19 @@ export default async function HoldingDetail({
         back={{ href: family ? `/app/familias/${family.id}` : '/app', label: family?.name ?? 'Famílias' }}
         title={holding.razao_social}
         action={
+          <div className="flex items-center gap-2">
+          <Link
+            href={`/app/holdings/${holdingId}/relatorio`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-soft"
+          >
+            <FileText size={15} /> Relatório anual
+          </Link>
+          <Link
+            href={`/app/holdings/${holdingId}/minutas`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
+          >
+            <FileSignature size={15} /> Minutas
+          </Link>
           <EditDialog title="Editar holding">
             <form className="grid gap-4 sm:grid-cols-2">
               <input type="hidden" name="id" value={holdingId} />
@@ -127,6 +140,7 @@ export default async function HoldingDetail({
               </div>
             </form>
           </EditDialog>
+          </div>
         }
       />
 

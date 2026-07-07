@@ -827,6 +827,8 @@ export interface Database {
           parceiro_ref: string | null
           obs_admin: string | null
           ativada_em: string | null
+          assinatura_provedor: string
+          assinatura_token: string | null
           created_at: string
           updated_at: string
         }
@@ -853,6 +855,8 @@ export interface Database {
           parceiro_ref?: string | null
           obs_admin?: string | null
           ativada_em?: string | null
+          assinatura_provedor?: string
+          assinatura_token?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -879,6 +883,8 @@ export interface Database {
           parceiro_ref?: string | null
           obs_admin?: string | null
           ativada_em?: string | null
+          assinatura_provedor?: string
+          assinatura_token?: string | null
           created_at?: string
           updated_at?: string
         }

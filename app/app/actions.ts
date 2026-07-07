@@ -695,6 +695,28 @@ export async function updateOrganization(formData: FormData) {
   redirect('/app/configuracoes?message=' + encodeURIComponent('Configurações salvas.'))
 }
 
+// -------------------------- Assinatura de minutas (Modelo B — ZapSign BYOK) --------------------------
+export async function updateAssinaturaProvedor(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/configuracoes')
+  const provedor = s(formData, 'assinatura_provedor') === 'zapsign' ? 'zapsign' : 'nenhum'
+  const tokenNovo = s(formData, 'assinatura_token')
+
+  const supabase = createClient()
+  const payload: { assinatura_provedor: string; assinatura_token?: string | null } = {
+    assinatura_provedor: provedor,
+  }
+  // token: só atualiza quando o campo é enviado com valor; 'REMOVER' limpa
+  if (tokenNovo === 'REMOVER') payload.assinatura_token = null
+  else if (tokenNovo) payload.assinatura_token = tokenNovo
+  if (provedor === 'nenhum') payload.assinatura_token = null
+
+  const { error } = await supabase.from('organizations').update(payload).eq('id', id)
+  if (error) redirect('/app/configuracoes?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/configuracoes')
+  redirect('/app/configuracoes?message=' + encodeURIComponent('Assinatura atualizada.'))
+}
+
 // -------------------------- Equipe (membros e convites) --------------------------
 export async function convidarMembro(formData: FormData) {
   const email = s(formData, 'email').toLowerCase()
