@@ -9,8 +9,9 @@ import {
   LABEL_PAPEL_FAMILIAR,
   LABEL_REGIME_BENS,
 } from '@/lib/format'
-import { createHolding, createSocio } from '../../actions'
+import { createHolding, createSocio, deleteHolding, deleteSocio } from '../../actions'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
+import { DeleteButton } from '@/components/delete-button'
 
 export default async function FamilyDetail({
   params,
@@ -22,24 +23,16 @@ export default async function FamilyDetail({
   const supabase = createClient()
 
   const { data: family } = await supabase
-    .from('families')
-    .select('id, name, notes, created_at')
-    .eq('id', params.id)
-    .single()
-
+    .from('families').select('id, name, notes, created_at').eq('id', params.id).single()
   if (!family) notFound()
 
   const { data: socios } = await supabase
-    .from('socios')
-    .select('id, nome, papel_familiar, regime_bens, cpf')
-    .eq('family_id', params.id)
-    .order('nome')
+    .from('socios').select('id, nome, papel_familiar, regime_bens, cpf')
+    .eq('family_id', params.id).order('nome')
 
   const { data: holdings } = await supabase
-    .from('holdings')
-    .select('id, razao_social, cnpj, tipo_societario, status, created_at')
-    .eq('family_id', params.id)
-    .order('razao_social')
+    .from('holdings').select('id, razao_social, cnpj, tipo_societario, status, created_at')
+    .eq('family_id', params.id).order('razao_social')
 
   return (
     <div>
@@ -92,12 +85,13 @@ export default async function FamilyDetail({
         ) : (
           <ListCard>
             {socios.map((so) => (
-              <div key={so.id} className="flex items-center justify-between px-5 py-3">
-                <span className="font-medium text-ink">{so.nome}</span>
+              <div key={so.id} className="flex items-center gap-2 px-5 py-3">
+                <span className="flex-1 font-medium text-ink">{so.nome}</span>
                 <span className="flex items-center gap-2 text-xs text-ink-muted">
                   {so.papel_familiar && <Pill>{LABEL_PAPEL_FAMILIAR[so.papel_familiar]}</Pill>}
                   {so.regime_bens ? LABEL_REGIME_BENS[so.regime_bens] : ''}
                 </span>
+                <DeleteButton action={deleteSocio} id={so.id} label={`o sócio "${so.nome}"`} extra={{ family_id: family.id }} />
               </div>
             ))}
           </ListCard>
@@ -105,9 +99,7 @@ export default async function FamilyDetail({
       </div>
 
       {/* HOLDINGS */}
-      <div className="mt-10">
-        <SectionTitle>Holdings</SectionTitle>
-      </div>
+      <div className="mt-10"><SectionTitle>Holdings</SectionTitle></div>
       <Card className="mt-3 p-5">
         <form className="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
           <input type="hidden" name="family_id" value={family.id} />
@@ -138,18 +130,21 @@ export default async function FamilyDetail({
         ) : (
           <ListCard>
             {holdings.map((h) => (
-              <Link key={h.id} href={`/app/holdings/${h.id}`} className="flex items-center justify-between px-5 py-4 transition hover:bg-surface">
-                <span>
-                  <span className="font-semibold text-ink">{h.razao_social}</span>
-                  <span className="ml-2 text-xs text-ink-soft">
-                    {LABEL_TIPO_SOCIETARIO[h.tipo_societario]}{h.cnpj ? ` · ${h.cnpj}` : ''}
+              <div key={h.id} className="flex items-center gap-2 px-5 py-4 transition hover:bg-surface">
+                <Link href={`/app/holdings/${h.id}`} className="flex flex-1 items-center justify-between">
+                  <span>
+                    <span className="font-semibold text-ink">{h.razao_social}</span>
+                    <span className="ml-2 text-xs text-ink-soft">
+                      {LABEL_TIPO_SOCIETARIO[h.tipo_societario]}{h.cnpj ? ` · ${h.cnpj}` : ''}
+                    </span>
                   </span>
-                </span>
-                <span className="flex items-center gap-3 text-xs text-ink-soft">
-                  {LABEL_STATUS_HOLDING[h.status]}
-                  <ChevronRight size={16} />
-                </span>
-              </Link>
+                  <span className="mr-3 flex items-center gap-3 text-xs text-ink-soft">
+                    {LABEL_STATUS_HOLDING[h.status]}
+                    <ChevronRight size={16} />
+                  </span>
+                </Link>
+                <DeleteButton action={deleteHolding} id={h.id} label={`a holding "${h.razao_social}" e seus dados`} extra={{ family_id: family.id }} />
+              </div>
             ))}
           </ListCard>
         )}

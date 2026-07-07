@@ -11,8 +11,9 @@ import {
   LABEL_TIPO_BEM,
   LABEL_TIPO_CLAUSULA,
 } from '@/lib/format'
-import { createQuota, createBem, createClausula } from '../../actions'
+import { createQuota, createBem, createClausula, deleteQuota, deleteBem, deleteClausula } from '../../actions'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
+import { DeleteButton } from '@/components/delete-button'
 
 export default async function HoldingDetail({
   params,
@@ -26,29 +27,21 @@ export default async function HoldingDetail({
   const { data: holding } = await supabase.from('holdings').select('*').eq('id', params.id).single()
   if (!holding) notFound()
 
-  const { data: family } = await supabase
-    .from('families').select('id, name').eq('id', holding.family_id).single()
-
-  const { data: socios } = await supabase
-    .from('socios').select('id, nome').eq('family_id', holding.family_id).order('nome')
-
+  const { data: family } = await supabase.from('families').select('id, name').eq('id', holding.family_id).single()
+  const { data: socios } = await supabase.from('socios').select('id, nome').eq('family_id', holding.family_id).order('nome')
   const { data: quotas } = await supabase
-    .from('quotas')
-    .select('id, socio_id, quantidade, percentual, tipo_direito, classe')
+    .from('quotas').select('id, socio_id, quantidade, percentual, tipo_direito, classe')
     .eq('holding_id', params.id).order('created_at')
-
   const { data: bens } = await supabase
-    .from('bens')
-    .select('id, tipo, descricao, valor_contabil, municipio_uf, gera_receita')
+    .from('bens').select('id, tipo, descricao, valor_contabil, municipio_uf, gera_receita')
     .eq('holding_id', params.id).order('descricao')
-
   const { data: clausulas } = await supabase
-    .from('clausulas')
-    .select('id, tipo, holding_id, quota_id, bem_id, descricao, registrada_em, responsavel')
+    .from('clausulas').select('id, tipo, holding_id, quota_id, bem_id, descricao, registrada_em, responsavel')
     .eq('accountant_id', holding.accountant_id).order('created_at')
 
   const nomePorSocio = new Map((socios ?? []).map((so) => [so.id, so.nome]))
   const temSocios = (socios ?? []).length > 0
+  const holdingId = holding.id
 
   const quotaLabel = new Map(
     (quotas ?? []).map((q) => [q.id, `Quota de ${nomePorSocio.get(q.socio_id) ?? 'sócio'} (${LABEL_TIPO_DIREITO[q.tipo_direito]})`]),
@@ -65,7 +58,7 @@ export default async function HoldingDetail({
   const idsQuotas = new Set((quotas ?? []).map((q) => q.id))
   const idsBens = new Set((bens ?? []).map((b) => b.id))
   const clausulasDaHolding = (clausulas ?? []).filter(
-    (c) => c.holding_id === holding.id || (c.quota_id && idsQuotas.has(c.quota_id)) || (c.bem_id && idsBens.has(c.bem_id)),
+    (c) => c.holding_id === holdingId || (c.quota_id && idsQuotas.has(c.quota_id)) || (c.bem_id && idsBens.has(c.bem_id)),
   )
 
   return (
@@ -103,7 +96,7 @@ export default async function HoldingDetail({
       ) : (
         <Card className="mt-3 p-5">
           <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <input type="hidden" name="holding_id" value={holding.id} />
+            <input type="hidden" name="holding_id" value={holdingId} />
             <div className="lg:col-span-2">
               <Label htmlFor="socio_id">Sócio</Label>
               <select id="socio_id" name="socio_id" required className={fieldClass}>
@@ -136,14 +129,15 @@ export default async function HoldingDetail({
         ) : (
           <ListCard>
             {(quotas ?? []).map((q) => (
-              <div key={q.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span className="font-medium text-ink">{nomePorSocio.get(q.socio_id) ?? 'Sócio removido'}</span>
+              <div key={q.id} className="flex items-center gap-2 px-5 py-3 text-sm">
+                <span className="flex-1 font-medium text-ink">{nomePorSocio.get(q.socio_id) ?? 'Sócio removido'}</span>
                 <span className="flex items-center gap-2 text-ink-muted">
                   <span className="num">{q.quantidade}</span> quotas
                   {q.percentual != null ? <> · <span className="num">{q.percentual}%</span></> : null}
                   <Pill>{LABEL_TIPO_DIREITO[q.tipo_direito]}</Pill>
                   {q.classe ? LABEL_CLASSE_QUOTA[q.classe] : ''}
                 </span>
+                <DeleteButton action={deleteQuota} id={q.id} label="esta quota" extra={{ holding_id: holdingId }} />
               </div>
             ))}
           </ListCard>
@@ -154,7 +148,7 @@ export default async function HoldingDetail({
       <div className="mt-10"><SectionTitle>Bens</SectionTitle></div>
       <Card className="mt-3 p-5">
         <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <input type="hidden" name="holding_id" value={holding.id} />
+          <input type="hidden" name="holding_id" value={holdingId} />
           <div>
             <Label htmlFor="tipo">Tipo</Label>
             <select id="tipo" name="tipo" className={fieldClass}>
@@ -192,8 +186,8 @@ export default async function HoldingDetail({
         ) : (
           <ListCard>
             {(bens ?? []).map((b) => (
-              <div key={b.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span>
+              <div key={b.id} className="flex items-center gap-2 px-5 py-3 text-sm">
+                <span className="flex-1">
                   <span className="font-medium text-ink">{b.descricao}</span>
                   <span className="ml-2 text-xs text-ink-soft">
                     {LABEL_TIPO_BEM[b.tipo]}{b.municipio_uf ? ` · ${b.municipio_uf}` : ''}
@@ -201,6 +195,7 @@ export default async function HoldingDetail({
                   </span>
                 </span>
                 <span className="num text-ink-muted">{formatarMoeda(b.valor_contabil)}</span>
+                <DeleteButton action={deleteBem} id={b.id} label={`o bem "${b.descricao}"`} extra={{ holding_id: holdingId }} />
               </div>
             ))}
           </ListCard>
@@ -214,7 +209,7 @@ export default async function HoldingDetail({
       </p>
       <Card className="mt-3 p-5">
         <form className="grid gap-4 sm:grid-cols-2">
-          <input type="hidden" name="holding_id" value={holding.id} />
+          <input type="hidden" name="holding_id" value={holdingId} />
           <div>
             <Label htmlFor="clausula_tipo">Tipo</Label>
             <select id="clausula_tipo" name="tipo" required className={fieldClass}>
@@ -264,14 +259,15 @@ export default async function HoldingDetail({
         ) : (
           <ListCard>
             {clausulasDaHolding.map((c) => (
-              <div key={c.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span className="flex items-center gap-2">
+              <div key={c.id} className="flex items-center gap-2 px-5 py-3 text-sm">
+                <span className="flex flex-1 items-center gap-2">
                   <span className="font-medium text-ink">{LABEL_TIPO_CLAUSULA[c.tipo]}</span>
                   <Pill>{escopoLabel(c)}</Pill>
                 </span>
                 <span className="text-xs text-ink-soft">
                   {c.responsavel ?? '—'}{c.registrada_em ? ` · ${formatarData(c.registrada_em)}` : ''}
                 </span>
+                <DeleteButton action={deleteClausula} id={c.id} label={`a cláusula de ${LABEL_TIPO_CLAUSULA[c.tipo].toLowerCase()}`} extra={{ holding_id: holdingId }} />
               </div>
             ))}
           </ListCard>

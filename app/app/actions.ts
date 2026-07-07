@@ -221,3 +221,71 @@ export async function createClausula(formData: FormData) {
   revalidatePath(`/app/holdings/${holdingId}`)
   redirect(`/app/holdings/${holdingId}`)
 }
+
+// -------------------------- Exclusões --------------------------
+export async function deleteFamily(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app')
+  const supabase = createClient()
+  await supabase.from('families').delete().eq('id', id)
+  revalidatePath('/app')
+  redirect('/app')
+}
+
+export async function deleteHolding(formData: FormData) {
+  const id = s(formData, 'id')
+  const familyId = s(formData, 'family_id')
+  const dest = familyId ? `/app/familias/${familyId}` : '/app'
+  const supabase = createClient()
+  await supabase.from('holdings').delete().eq('id', id)
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function deleteSocio(formData: FormData) {
+  const id = s(formData, 'id')
+  const familyId = s(formData, 'family_id')
+  const dest = familyId ? `/app/familias/${familyId}` : '/app'
+  const supabase = createClient()
+  const { error } = await supabase.from('socios').delete().eq('id', id)
+  if (error) {
+    redirect(
+      `${dest}?error=` +
+        encodeURIComponent(
+          'Não foi possível excluir: o sócio tem quotas vinculadas. Remova as quotas primeiro.',
+        ),
+    )
+  }
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function deleteQuota(formData: FormData) {
+  const id = s(formData, 'id')
+  const holdingId = s(formData, 'holding_id')
+  const dest = holdingId ? `/app/holdings/${holdingId}` : '/app'
+  const supabase = createClient()
+  await supabase.from('quotas').delete().eq('id', id)
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function deleteBem(formData: FormData) {
+  const id = s(formData, 'id')
+  const holdingId = s(formData, 'holding_id')
+  const dest = holdingId ? `/app/holdings/${holdingId}` : '/app'
+  const supabase = createClient()
+  await supabase.from('bens').delete().eq('id', id)
+  revalidatePath(dest)
+  redirect(dest)
+}
+
+export async function deleteClausula(formData: FormData) {
+  const id = s(formData, 'id')
+  const holdingId = s(formData, 'holding_id')
+  const dest = holdingId ? `/app/holdings/${holdingId}` : '/app'
+  const supabase = createClient()
+  await supabase.from('clausulas').delete().eq('id', id)
+  revalidatePath(dest)
+  redirect(dest)
+}

@@ -2,8 +2,9 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarData } from '@/lib/format'
-import { createFamily } from './actions'
+import { createFamily, deleteFamily } from './actions'
 import { PageHeader, Card, ListCard, EmptyState, Label, SubmitButton, fieldClass } from '@/components/ui'
+import { DeleteButton } from '@/components/delete-button'
 
 export default async function AppHome({
   searchParams,
@@ -43,17 +44,16 @@ export default async function AppHome({
         ) : (
           <ListCard>
             {families.map((f) => (
-              <Link
-                key={f.id}
-                href={`/app/familias/${f.id}`}
-                className="flex items-center justify-between px-5 py-4 transition hover:bg-surface"
-              >
-                <span className="font-semibold text-ink">{f.name}</span>
-                <span className="flex items-center gap-3 text-xs text-ink-soft">
-                  criada em {formatarData(f.created_at)}
-                  <ChevronRight size={16} />
-                </span>
-              </Link>
+              <div key={f.id} className="flex items-center gap-2 px-5 py-4 transition hover:bg-surface">
+                <Link href={`/app/familias/${f.id}`} className="flex flex-1 items-center justify-between">
+                  <span className="font-semibold text-ink">{f.name}</span>
+                  <span className="mr-3 flex items-center gap-3 text-xs text-ink-soft">
+                    criada em {formatarData(f.created_at)}
+                    <ChevronRight size={16} />
+                  </span>
+                </Link>
+                <DeleteButton action={deleteFamily} id={f.id} label={`a família "${f.name}" e tudo dentro dela`} />
+              </div>
             ))}
           </ListCard>
         )}
