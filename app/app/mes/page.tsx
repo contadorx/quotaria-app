@@ -101,6 +101,12 @@ export default async function MesPage({
               <span className={`text-xs ${s.cor === 'red' ? 'font-medium text-red-700' : s.cor === 'emerald' ? 'text-emerald-700' : 'text-ink-muted'}`}>
                 {s.label}
               </span>
+              <Link
+                href={`/app/mes/${h.id}?ano=${ano}&mes=${mes}`}
+                className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink"
+              >
+                Extrato
+              </Link>
               <EditDialog title={`Fechamento · ${MESES[mes - 1]}/${ano}`} label={f ? 'Revisar' : 'Fechar mês'}>
                 <form className="space-y-4">
                   <input type="hidden" name="holding_id" value={h.id} />
