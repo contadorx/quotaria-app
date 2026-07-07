@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/format'
 import { PrintButton } from '@/components/print-button'
+import { MarcaEscritorio, AssinaturaEscritorio } from '@/components/marca-escritorio'
 import {
   cenarioSucessorio, cenarioLocacao, achados, semaforo, recomendacoes,
   type ClienteDiagnostico,
@@ -39,7 +40,7 @@ export default async function DiagnosticoPage({ params }: { params: { id: string
   const c = data as unknown as ClienteDiagnostico
   const { data: org } = await supabase
     .from('organizations')
-    .select('nome, crc')
+    .select('nome, crc, logo_url, cor_primaria')
     .eq('id', (data as { organization_id: string }).organization_id)
     .maybeSingle()
 
@@ -63,24 +64,20 @@ export default async function DiagnosticoPage({ params }: { params: { id: string
       </div>
 
       <article className="print-page rounded-xl2 border border-line bg-white p-8 shadow-card print:border-0 print:shadow-none">
-        {/* cabeçalho */}
-        <header className="border-b-2 border-navy pb-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gold-deep">
-            Quotaria · Gestão Patrimonial e Sucessória
-          </p>
-          <h1 className="mt-2 text-2xl font-extrabold text-navy">Diagnóstico Patrimonial e Sucessório</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            {c.nome} — retrato da estrutura, dos riscos e dos cenários.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-soft">
-            <span>
-              Preparado por: <strong className="text-ink">{org?.nome ?? '—'}</strong>
-              {org?.crc ? ` · CRC ${org.crc}` : ''}
-            </span>
-            <span>UF de referência: {c.uf}</span>
-            <span>Data: {hoje()}</span>
-          </div>
-        </header>
+        <MarcaEscritorio
+          nome={org?.nome ?? null}
+          crc={org?.crc ?? null}
+          logoUrl={org?.logo_url ?? null}
+          corPrimaria={org?.cor_primaria ?? null}
+          titulo="Diagnóstico Patrimonial e Sucessório"
+          subtitulo={`${c.nome} — retrato da estrutura, dos riscos e dos cenários.`}
+          meta={
+            <>
+              <span>UF de referência: {c.uf}</span>
+              <span>Data: {hoje()}</span>
+            </>
+          }
+        />
 
         {/* sumário / semáforo */}
         <section className="mt-6">
@@ -265,14 +262,7 @@ export default async function DiagnosticoPage({ params }: { params: { id: string
           </p>
         </footer>
 
-        <div className="mt-8 border-t border-line pt-4">
-          <p className="text-sm text-ink">_______________________________________</p>
-          <p className="mt-1 text-sm font-semibold text-ink">
-            {org?.nome ?? '[escritório]'}
-            {org?.crc ? ` · CRC ${org.crc}` : ''}
-          </p>
-          <p className="text-xs text-ink-soft">Contador responsável</p>
-        </div>
+        <AssinaturaEscritorio nome={org?.nome ?? null} crc={org?.crc ?? null} />
       </article>
     </div>
   )

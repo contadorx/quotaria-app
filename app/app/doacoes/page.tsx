@@ -233,7 +233,7 @@ function Grupo({
                   <span className="text-ink-soft">
                     execução {EXECUCAO_DOACAO.filter((e) => d[e.campo as keyof Doacao]).length}/4
                   </span>
-                  {d.cartorio ? <span>· {d.cartorio}</span> : null}
+                  {d.cartorio ? <span>· {d.cartorio}</span> : <span className="italic text-ink-soft">· instrumento particular</span>}
                 </div>
               </div>
               <div className="hidden text-right sm:block">

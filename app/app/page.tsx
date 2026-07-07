@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { ChevronRight, AlertTriangle } from 'lucide-react'
+import { ChevronRight, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { pendenciasPorFamilia } from '@/lib/farois'
+import { pendenciasPorFamilia, agendaDoEscritorio } from '@/lib/farois'
 import { formatarData, formatarDataISO, formatarMoeda } from '@/lib/format'
 import { createFamily, deleteFamily } from './actions'
 import { PageHeader, Card, ListCard, EmptyState, Label, SubmitButton, fieldClass } from '@/components/ui'
@@ -16,11 +16,11 @@ export default async function AppHome({
 
   const { data: families } = await supabase.from('families').select('id, name, created_at').order('created_at', { ascending: false })
   const pendencias = await pendenciasPorFamilia(supabase)
+  const agenda = await agendaDoEscritorio(supabase)
   const { data: holdings } = await supabase.from('holdings').select('id')
   const { data: bens } = await supabase.from('bens').select('valor_contabil, valor_mercado')
   const { data: eventos } = await supabase.from('eventos').select('data_prevista, status').eq('status', 'pendente')
   const { data: doacoes } = await supabase.from('doacoes').select('itcmd_estimado, status').eq('status', 'concluida')
-  const { data: doaPlan } = await supabase.from('doacoes').select('data_prevista, adiada_em').eq('status', 'planejada')
 
   const hoje = new Date().toISOString().slice(0, 10)
   const hoje30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10)
@@ -33,15 +33,55 @@ export default async function AppHome({
   const nFamilias = (families ?? []).length
   const nHoldings = (holdings ?? []).length
   const patrimonio = (bens ?? []).reduce((a, b) => a + Number(b.valor_mercado ?? b.valor_contabil ?? 0), 0)
-  const atrasados = (eventos ?? []).filter((e) => e.data_prevista < hoje)
   const proximos = (eventos ?? []).filter((e) => e.data_prevista >= hoje && e.data_prevista <= hoje30)
   const emDiaMes = (fechs ?? []).filter((f) => f.distribuicoes_ok && f.documentos_ok && f.alertas_ok && f.alugueis_ok && f.doacoes_ok).length
-  const doacoesAtrasadas = (doaPlan ?? []).filter((d) => d.data_prevista && d.data_prevista < hoje && !d.adiada_em).length
   const itcmdEconomizado = (doacoes ?? []).reduce((a, d) => a + Number(d.itcmd_estimado ?? 0), 0)
 
   return (
     <div>
       <PageHeader eyebrow="Painel" title="Sua carteira" description="A infraestrutura do honorário premium — o pulso de todas as famílias num lugar." />
+
+      {/* O QUE PRECISA DE VOCÊ — a agenda do escritório */}
+      <Card className="mb-3 p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">O que precisa de você</h2>
+          {agenda.length > 0 && (
+            <span className="text-xs text-ink-soft">
+              {agenda.filter((i) => i.estado === 'alerta').length} urgente(s) · {agenda.length} no total
+            </span>
+          )}
+        </div>
+        {agenda.length === 0 ? (
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+            <CheckCircle2 size={16} /> Carteira em dia — nada pendente na sua mão agora.
+          </div>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {agenda.slice(0, 12).map((i) => (
+              <li key={i.id}>
+                <Link
+                  href={i.href}
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-sm transition ${
+                    i.estado === 'alerta' ? 'border-red-200 bg-red-50 hover:bg-red-100' : 'border-amber-200 bg-amber-50 hover:bg-amber-100'
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <AlertTriangle size={15} className={`shrink-0 ${i.estado === 'alerta' ? 'text-red-600' : 'text-amber-600'}`} />
+                    <span className="min-w-0">
+                      <span className="font-medium text-ink">{i.label}</span>
+                      <span className="ml-2 text-xs text-ink-soft">{i.familia}{i.holding ? ` · ${i.holding}` : ''}</span>
+                    </span>
+                  </span>
+                  <ChevronRight size={16} className="shrink-0 text-ink-soft" />
+                </Link>
+              </li>
+            ))}
+            {agenda.length > 12 && (
+              <li className="pt-1 text-xs text-ink-soft">+ {agenda.length - 12} outros itens — resolva os de cima ou abra cada família.</li>
+            )}
+          </ul>
+        )}
+      </Card>
 
       {/* indicadores */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -52,31 +92,19 @@ export default async function AppHome({
       </div>
 
       <div className="mt-3 grid gap-3 lg:grid-cols-3">
-        {/* alertas */}
+        {/* próximos */}
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Alertas</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Próximos 30 dias</h2>
             <Link href="/app/calendario" className="text-xs text-ink-soft transition hover:text-navy">Calendário →</Link>
           </div>
-          {atrasados.length === 0 && proximos.length === 0 && doacoesAtrasadas === 0 ? (
-            <p className="mt-3 text-sm text-ink-soft">Nada vencido nem nos próximos 30 dias.</p>
+          {proximos.length === 0 ? (
+            <p className="mt-3 text-sm text-ink-soft">Nada nos próximos 30 dias. O que está vencido aparece em “O que precisa de você”, acima.</p>
           ) : (
             <div className="mt-3 flex flex-wrap gap-3 text-sm">
-              {atrasados.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 font-medium text-red-700">
-                  <AlertTriangle size={15} /> {atrasados.length} atrasado{atrasados.length > 1 ? 's' : ''}
-                </span>
-              )}
-              {proximos.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-cream px-3 py-2 font-medium text-navy">
-                  {proximos.length} nos próximos 30 dias
-                </span>
-              )}
-              {doacoesAtrasadas > 0 && (
-                <Link href="/app/doacoes" className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 font-medium text-red-700 transition hover:bg-red-100">
-                  <AlertTriangle size={15} /> {doacoesAtrasadas} doaç{doacoesAtrasadas > 1 ? 'ões' : 'ão'} do cronograma atrasada{doacoesAtrasadas > 1 ? 's' : ''}
-                </Link>
-              )}
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-cream px-3 py-2 font-medium text-navy">
+                {proximos.length} compromisso{proximos.length > 1 ? 's' : ''} chegando
+              </span>
             </div>
           )}
         </Card>

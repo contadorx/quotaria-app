@@ -106,6 +106,7 @@ export function FormNovaDoacao({
       <div className="lg:col-span-2">
         <Label htmlFor="cartorio">Cartório (opcional)</Label>
         <input id="cartorio" name="cartorio" placeholder="Ex.: 2º Tabelião de Notas" className={fieldClass} />
+        <p className="mt-1 text-xs text-ink-soft">Deixe em branco para doação por instrumento particular (sem escritura pública).</p>
       </div>
       <label className="flex items-center gap-2 text-sm text-ink-muted sm:col-span-2 lg:col-span-4">
         <input type="checkbox" name="com_reserva_usufruto" className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { ChevronRight, AlertTriangle, CheckCircle2, CalendarDays, Coins, HandCoins, FolderOpen, LayoutGrid } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { faroisDaFamilia } from '@/lib/farois'
+import { HoldingIdentidade } from '@/components/holding-identidade'
+import { CampoDocumento } from '@/components/campo-documento'
 import {
   formatarData,
   LABEL_TIPO_SOCIETARIO,
@@ -137,7 +139,7 @@ export default async function FamilyDetail({
           </div>
           <div>
             <Label htmlFor="cpf">CPF (opcional)</Label>
-            <input id="cpf" name="cpf" placeholder="000.000.000-00" className={fieldClass} />
+            <CampoDocumento id="cpf" name="cpf" />
           </div>
           <div>
             <Label htmlFor="papel_familiar">Papel na família</Label>
@@ -181,7 +183,7 @@ export default async function FamilyDetail({
                     </div>
                     <div>
                       <Label htmlFor={`es_cpf_${so.id}`}>CPF</Label>
-                      <input id={`es_cpf_${so.id}`} name="cpf" defaultValue={so.cpf ?? ''} className={fieldClass} />
+                      <CampoDocumento id={`es_cpf_${so.id}`} name="cpf" defaultValue={so.cpf ?? ''} />
                     </div>
                     <div>
                       <Label htmlFor={`es_papel_${so.id}`}>Papel na família</Label>
@@ -261,24 +263,10 @@ export default async function FamilyDetail({
       {/* HOLDINGS */}
       <div className="mt-10"><SectionTitle>Holdings</SectionTitle></div>
       <Card className="mt-3 p-5">
-        <form className="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
+        <form className="space-y-4">
           <input type="hidden" name="family_id" value={family.id} />
+          <HoldingIdentidade />
           <div>
-            <Label htmlFor="razao_social">Razão social</Label>
-            <input id="razao_social" name="razao_social" required placeholder="Ex.: Andrade Participações Ltda" className={fieldClass} />
-          </div>
-          <div>
-            <Label htmlFor="tipo_societario">Tipo</Label>
-            <select id="tipo_societario" name="tipo_societario" className={fieldClass}>
-              <option value="ltda">Ltda</option>
-              <option value="sa">S/A</option>
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="cnpj">CNPJ (opcional)</Label>
-            <input id="cnpj" name="cnpj" placeholder="00.000.000/0001-00" className={fieldClass} />
-          </div>
-          <div className="sm:col-span-3">
             <SubmitButton action={createHolding}>Adicionar holding</SubmitButton>
           </div>
         </form>

@@ -4,6 +4,7 @@ import { ArrowLeft, Check, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda, LABEL_TIPO_DIREITO, LABEL_TIPO_BEM, LABEL_TIPO_CLAUSULA } from '@/lib/format'
 import { PrintButton } from '@/components/print-button'
+import { MarcaEscritorio, AssinaturaEscritorio } from '@/components/marca-escritorio'
 import {
   saudeAno, resumoDistribuicoes, resumoDoacoes, sucessaoAndamento,
   economiaRealizada, conformidadeDossie, conformidadeReforma, radarProximoAno,
@@ -44,7 +45,7 @@ export default async function RelatorioAnualPage({
   const [{ data: family }, { data: org }, { data: socios }, { data: quotas }, { data: bens }, { data: clausulas }] =
     await Promise.all([
       supabase.from('families').select('name').eq('id', holding.family_id).maybeSingle(),
-      supabase.from('organizations').select('nome, crc').eq('id', holding.organization_id).maybeSingle(),
+      supabase.from('organizations').select('nome, crc, logo_url, cor_primaria').eq('id', holding.organization_id).maybeSingle(),
       supabase.from('socios').select('id, nome').eq('family_id', holding.family_id),
       supabase.from('quotas').select('socio_id, quantidade, percentual, tipo_direito').eq('holding_id', params.id),
       supabase.from('bens').select('tipo, descricao, valor_contabil, gera_receita').eq('holding_id', params.id),
@@ -115,26 +116,22 @@ export default async function RelatorioAnualPage({
 
       <article className="print-page rounded-xl2 border border-line bg-white p-8 shadow-card print:border-0 print:shadow-none">
         {/* capa */}
-        <header className="border-b-2 border-navy pb-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gold-deep">
-            Quotaria · Relatório Anual da Holding
-          </p>
-          <h1 className="mt-2 text-2xl font-extrabold text-navy">{holding.razao_social}</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            {family?.name ? `Família ${family.name} · ` : ''}Exercício {ano}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-soft">
-            <span>Preparado por: <strong className="text-ink">{org?.nome ?? '—'}</strong>{org?.crc ? ` · CRC ${org.crc}` : ''}</span>
-            <span>Emitido em: {new Date().toLocaleDateString('pt-BR')}</span>
-          </div>
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
-            <span className={`h-3.5 w-3.5 rounded-full ${DOT[saude.cor]}`} />
-            <span className="text-sm font-semibold text-ink">{saude.texto}</span>
+        <MarcaEscritorio
+          nome={org?.nome ?? null}
+          crc={org?.crc ?? null}
+          logoUrl={org?.logo_url ?? null}
+          corPrimaria={org?.cor_primaria ?? null}
+          titulo={holding.razao_social}
+          subtitulo={`${family?.name ? `Família ${family.name} · ` : ''}Relatório Anual · Exercício ${ano}`}
+          meta={<span>Emitido em: {new Date().toLocaleDateString('pt-BR')}</span>}
+        />
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
+          <span className={`h-3.5 w-3.5 rounded-full ${DOT[saude.cor]}`} />
+          <span className="text-sm font-semibold text-ink">{saude.texto}</span>
             <span className="ml-auto text-xs text-ink-soft">
               {saude.mesesFechados}/12 meses fechados · {saude.pctCriterios}% dos critérios
             </span>
           </div>
-        </header>
 
         {/* 1. estrutura hoje */}
         <Sec n="1" t="A estrutura hoje">
@@ -307,11 +304,7 @@ export default async function RelatorioAnualPage({
           </p>
         </footer>
 
-        <div className="mt-8 border-t border-line pt-4">
-          <p className="text-sm text-ink">_______________________________________</p>
-          <p className="mt-1 text-sm font-semibold text-ink">{org?.nome ?? '[escritório]'}{org?.crc ? ` · CRC ${org.crc}` : ''}</p>
-          <p className="text-xs text-ink-soft">Contador responsável</p>
-        </div>
+        <AssinaturaEscritorio nome={org?.nome ?? null} crc={org?.crc ?? null} />
       </article>
     </div>
   )

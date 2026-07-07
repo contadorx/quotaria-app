@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Check, AlertTriangle, FileText, FileSignature } from 'lucide-react'
+import { Check, AlertTriangle, FileText, FileSignature, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { HoldingIdentidade } from '@/components/holding-identidade'
+import { faroisDaFamilia } from '@/lib/farois'
 import {
   formatarData,
   formatarMoeda,
@@ -64,6 +66,7 @@ export default async function HoldingDetail({
   const nomePorSocio = new Map((socios ?? []).map((so) => [so.id, so.nome]))
   const temSocios = (socios ?? []).length > 0
   const holdingId = holding.id
+  const faroisHolding = await faroisDaFamilia(supabase, holding.family_id, [holdingId])
 
   const quotaLabel = new Map(
     (quotas ?? []).map((q) => [q.id, `Quota de ${nomePorSocio.get(q.socio_id) ?? 'sócio'} (${LABEL_TIPO_DIREITO[q.tipo_direito]})`]),
@@ -104,22 +107,7 @@ export default async function HoldingDetail({
             <form className="grid gap-4 sm:grid-cols-2">
               <input type="hidden" name="id" value={holdingId} />
               <div className="sm:col-span-2">
-                <Label htmlFor="edit_razao">Razão social</Label>
-                <input id="edit_razao" name="razao_social" defaultValue={holding.razao_social} required className={fieldClass} />
-              </div>
-              <div>
-                <Label htmlFor="edit_fantasia">Nome fantasia</Label>
-                <input id="edit_fantasia" name="nome_fantasia" defaultValue={holding.nome_fantasia ?? ''} className={fieldClass} />
-              </div>
-              <div>
-                <Label htmlFor="edit_cnpj">CNPJ</Label>
-                <input id="edit_cnpj" name="cnpj" defaultValue={holding.cnpj ?? ''} className={fieldClass} />
-              </div>
-              <div>
-                <Label htmlFor="edit_tipo">Tipo</Label>
-                <select id="edit_tipo" name="tipo_societario" defaultValue={holding.tipo_societario} className={fieldClass}>
-                  {Object.entries(LABEL_TIPO_SOCIETARIO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
+                <HoldingIdentidade defaults={{ razaoSocial: holding.razao_social, nomeFantasia: holding.nome_fantasia ?? '', tipoSocietario: holding.tipo_societario, cnpj: holding.cnpj ?? '' }} />
               </div>
               <div>
                 <Label htmlFor="edit_status">Status</Label>
@@ -150,6 +138,30 @@ export default async function HoldingDetail({
         <Info label="CNPJ" value={holding.cnpj ?? '—'} />
         <Info label="Constituição" value={formatarData(holding.data_constituicao)} />
       </Card>
+
+      {faroisHolding.length > 0 && (
+        <Card className="mb-8 p-5">
+          <SectionTitle>O que fazer nesta holding</SectionTitle>
+          <ul className="mt-3 space-y-2">
+            {faroisHolding.map((f) => (
+              <li key={f.chave}>
+                <Link
+                  href={f.href}
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-sm transition ${
+                    f.estado === 'alerta' ? 'border-red-200 bg-red-50 hover:bg-red-100' : 'border-amber-200 bg-amber-50 hover:bg-amber-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 font-medium text-ink">
+                    <AlertTriangle size={15} className={f.estado === 'alerta' ? 'text-red-600' : 'text-amber-600'} />
+                    {f.label}
+                  </span>
+                  <ChevronRight size={16} className="text-ink-soft" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {searchParams?.error && <p className="mb-6 text-sm font-medium text-red-600">{searchParams.error}</p>}
 

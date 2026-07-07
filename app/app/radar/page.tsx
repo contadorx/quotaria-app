@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/format'
 import { calcularScore, classificar, leadQuenteReforma, potencialMensal, LABEL_STATUS_RADAR } from '@/lib/radar'
 import { createRadarCliente } from '../actions'
-import { PageHeader, Card, ListCard, EmptyState, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
+import { PageHeader, Card, ListCard, EmptyState, Label, SubmitButton, fieldClass } from '@/components/ui'
 
 export default async function RadarPage({
   searchParams,
@@ -14,9 +14,8 @@ export default async function RadarPage({
   const supabase = createClient()
   const { data: clientes } = await supabase
     .from('radar_clientes')
-    .select('id, nome, n_imoveis, patrimonio, renda_aluguel_anual, socio_pj, recebe_dividendos, n_herdeiros, status')
-    .neq('status', 'descartado')
-    .order('created_at', { ascending: false })
+    .select('id, nome, n_imoveis, patrimonio, renda_aluguel_anual, socio_pj, recebe_dividendos, n_herdeiros, status, updated_at, notes')
+    .order('updated_at', { ascending: false })
 
   const lista = (clientes ?? [])
     .map((c) => {
@@ -26,22 +25,34 @@ export default async function RadarPage({
     })
     .sort((a, b) => b.score - a.score)
 
-  const quentes = lista.filter((c) => c.quente).length
-  const potencial = lista
+  const ativos = lista.filter((c) => c.status !== 'descartado')
+  const quentes = ativos.filter((c) => c.quente).length
+  const potencial = ativos
     .filter((c) => !['fechado'].includes(c.status))
     .reduce((acc, c) => acc + potencialMensal(c.classe), 0)
+
+  // pipeline: agrupa por estágio da conversa (o log do escritório)
+  const ESTAGIOS: { chave: string; cor: string }[] = [
+    { chave: 'novo', cor: 'bg-ink-soft/50' },
+    { chave: 'abordado', cor: 'bg-sky-500' },
+    { chave: 'diagnostico', cor: 'bg-gold' },
+    { chave: 'proposta', cor: 'bg-amber-500' },
+    { chave: 'fechado', cor: 'bg-emerald-600' },
+  ]
+  const porEstagio = new Map(ESTAGIOS.map((e) => [e.chave, ativos.filter((c) => c.status === e.chave)]))
+  const descartados = lista.filter((c) => c.status === 'descartado').length
 
   return (
     <div>
       <PageHeader
-        eyebrow="Aquisição"
+        eyebrow="Log do escritório"
         title="Radar de Oportunidades"
-        description="A Mina de Ouro da sua carteira: informe os 6 sinais da DIRPF de cada cliente e o sistema qualifica, prioriza e monta o argumentário de venda."
+        description="O log da sua prospecção: cada cliente da carteira num estágio da conversa, do primeiro contato ao fechamento. O sistema qualifica pelos sinais da DIRPF e prioriza quem vale o papo agora."
       />
 
-      {lista.length > 0 && (
+      {ativos.length > 0 && (
         <div className="mb-6 grid grid-cols-3 gap-3">
-          <Resumo rotulo="No radar" valor={String(lista.length)} />
+          <Resumo rotulo="No pipeline" valor={String(ativos.length)} />
           <Resumo rotulo="Leads quentes da Reforma" valor={String(quentes)} destaque={quentes > 0} />
           <Resumo rotulo="Potencial de honorários" valor={`${formatarMoeda(potencial)}/mês`} />
         </div>
@@ -85,32 +96,49 @@ export default async function RadarPage({
         {searchParams?.error && <p className="mt-3 text-sm font-medium text-red-600">{searchParams.error}</p>}
       </Card>
 
-      <div className="mt-6">
-        {lista.length === 0 ? (
-          <EmptyState>Nenhum cliente qualificado ainda. Comece pelos clientes com imóveis na PF e sócios de PJ.</EmptyState>
+      <div className="mt-6 space-y-5">
+        {ativos.length === 0 ? (
+          <EmptyState>Nenhum cliente no pipeline ainda. Comece pelos clientes com imóveis na PF e sócios de PJ.</EmptyState>
         ) : (
-          <ListCard>
-            {lista.map((c) => (
-              <Link key={c.id} href={`/app/radar/${c.id}`} className="flex items-center gap-3 px-5 py-3.5 text-sm transition hover:bg-surface">
-                <ScoreBadge score={c.score} classe={c.classe} />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 font-semibold text-ink">
-                    {c.nome}
-                    {c.quente && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
-                        <Flame size={11} /> lead quente da Reforma
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-xs text-ink-soft">
-                    {c.n_imoveis} imóveis · {formatarMoeda(Number(c.patrimonio))} · aluguéis {formatarMoeda(Number(c.renda_aluguel_anual))}/ano
-                  </div>
+          ESTAGIOS.map((e) => {
+            const clientes = porEstagio.get(e.chave) ?? []
+            if (clientes.length === 0) return null
+            return (
+              <div key={e.chave}>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${e.cor}`} />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-navy">{LABEL_STATUS_RADAR[e.chave]}</h3>
+                  <span className="text-xs text-ink-soft">{clientes.length}</span>
                 </div>
-                <Pill>{LABEL_STATUS_RADAR[c.status]}</Pill>
-                <ChevronRight size={16} className="text-ink-soft" />
-              </Link>
-            ))}
-          </ListCard>
+                <ListCard>
+                  {clientes.map((c) => (
+                    <Link key={c.id} href={`/app/radar/${c.id}`} className="flex items-center gap-3 px-5 py-3.5 text-sm transition hover:bg-surface">
+                      <ScoreBadge score={c.score} classe={c.classe} />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 font-semibold text-ink">
+                          {c.nome}
+                          {c.quente && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                              <Flame size={11} /> lead quente da Reforma
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 text-xs text-ink-soft">
+                          {c.n_imoveis} imóveis · {formatarMoeda(Number(c.patrimonio))} · aluguéis {formatarMoeda(Number(c.renda_aluguel_anual))}/ano
+                        </div>
+                        {c.notes && <div className="mt-0.5 truncate text-xs italic text-ink-soft">“{c.notes}”</div>}
+                      </div>
+                      <span className="hidden text-[11px] text-ink-soft sm:block">{tempoRelativo(c.updated_at)}</span>
+                      <ChevronRight size={16} className="text-ink-soft" />
+                    </Link>
+                  ))}
+                </ListCard>
+              </div>
+            )
+          })
+        )}
+        {descartados > 0 && (
+          <p className="text-xs text-ink-soft">{descartados} cliente(s) descartado(s) — ocultos do pipeline.</p>
         )}
       </div>
 
@@ -120,6 +148,16 @@ export default async function RadarPage({
       </p>
     </div>
   )
+}
+
+function tempoRelativo(iso: string | null): string {
+  if (!iso) return ''
+  const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+  if (dias <= 0) return 'hoje'
+  if (dias === 1) return 'ontem'
+  if (dias < 30) return `há ${dias} dias`
+  const meses = Math.floor(dias / 30)
+  return meses === 1 ? 'há 1 mês' : `há ${meses} meses`
 }
 
 function Resumo({ rotulo, valor, destaque }: { rotulo: string; valor: string; destaque?: boolean }) {
