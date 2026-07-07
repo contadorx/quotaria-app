@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { salvarFechamento } from '../actions'
+import { salvarFechamento, fecharMesEmLote } from '../actions'
 import { PageHeader, Card, EmptyState, Label, SubmitButton, fieldClass } from '@/components/ui'
 import { FiltroFamiliaChip } from '@/components/filtro-familia-chip'
 import { EditDialog } from '@/components/edit-dialog'
@@ -88,6 +88,22 @@ export default async function MesPage({
   const pend = lista.filter((x) => x.s.cor === 'gold' || x.s.cor === 'red').length
   const naoIniciado = lista.filter((x) => x.s.cor === 'off').length
 
+  // e-mails da família por holding (para o envio dos extratos em lote)
+  const { data: contatos } = await supabase
+    .from('family_contacts').select('family_id, email, receber_relatorio')
+  const emailsPorFamilia = new Map<string, string[]>()
+  for (const c of contatos ?? []) {
+    if (c.receber_relatorio && c.email) {
+      const arr = emailsPorFamilia.get(c.family_id) ?? []
+      arr.push(c.email)
+      emailsPorFamilia.set(c.family_id, arr)
+    }
+  }
+  const emailsDaHolding = (hid: string) => {
+    const fam = (holdings ?? []).find((h) => h.id === hid)?.family_id
+    return fam ? (emailsPorFamilia.get(fam) ?? []) : []
+  }
+
   function sugestao(hid: string): Record<string, boolean> {
     return {
       distribuicoes_ok: comDist.has(hid),
@@ -125,6 +141,22 @@ export default async function MesPage({
 
       {searchParams?.error && <p className="mb-4 text-sm font-medium text-red-600">{searchParams.error}</p>}
 
+      {(holdings ?? []).length > 0 && (naoIniciado > 0 || lista.some((x) => emailsDaHolding(x.h.id).length > 0)) && (
+        <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="text-sm text-ink-muted">
+            {naoIniciado > 0
+              ? `${naoIniciado} holding(s) ainda não fechada(s) neste mês.`
+              : 'Todas as holdings já têm fechamento neste mês.'}
+          </div>
+          {naoIniciado > 0 && (
+            <form action={fecharMesEmLote}>
+              <input type="hidden" name="competencia" value={competencia} />
+              <SubmitButton action={fecharMesEmLote}>Fechar mês para as {naoIniciado} a iniciar</SubmitButton>
+            </form>
+          )}
+        </Card>
+      )}
+
       {(holdings ?? []).length === 0 ? (
         <EmptyState>
           Cadastre uma holding para começar os fechamentos.{' '}
@@ -140,6 +172,15 @@ export default async function MesPage({
                 <span className="flex-1 font-medium text-ink">{h.razao_social}</span>
                 <span className={`text-xs ${s.cor === 'red' ? 'font-medium text-red-700' : s.cor === 'emerald' ? 'text-emerald-700' : 'text-ink-muted'}`}>{s.label}</span>
                 <Link href={`/app/mes/${h.id}?ano=${ano}&mes=${mes}`} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink">Extrato</Link>
+                {emailsDaHolding(h.id).length > 0 && (
+                  <a
+                    href={`mailto:${emailsDaHolding(h.id).join(',')}?subject=${encodeURIComponent(`Extrato mensal ${MESES[mes - 1]}/${ano} — ${h.razao_social}`)}&body=${encodeURIComponent('Segue o extrato do mês da holding. Qualquer dúvida, estou à disposição.')}`}
+                    className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-navy transition hover:bg-surface"
+                    title="Enviar extrato por e-mail à família"
+                  >
+                    Enviar
+                  </a>
+                )}
                 <EditDialog title={`Fechamento · ${MESES[mes - 1]}/${ano}`} label={f ? 'Revisar' : 'Fechar mês'}>
                   <form className="space-y-4">
                     <input type="hidden" name="holding_id" value={h.id} />

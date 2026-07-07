@@ -655,6 +655,54 @@ export async function salvarFechamento(formData: FormData) {
   redirect(`/app/mes?ano=${ano}&mes=${mes}`)
 }
 
+// Fecha o mês EM LOTE para todas as holdings ainda não iniciadas na competência,
+// usando os sinais auto-detectados (não sobrescreve fechamentos já salvos).
+export async function fecharMesEmLote(formData: FormData) {
+  const competencia = s(formData, 'competencia')
+  if (!competencia) redirect('/app/mes')
+  const [ano, mes] = competencia.split('-')
+  const prefixo = competencia.slice(0, 7)
+  const supabase = createClient()
+
+  const [{ data: holdings }, { data: fechs }, { data: distrib }, { data: docs }, { data: ev }, { data: doaPlan }] =
+    await Promise.all([
+      supabase.from('holdings').select('id'),
+      supabase.from('fechamentos').select('holding_id').eq('competencia', competencia),
+      supabase.from('distribuicoes').select('holding_id, competencia'),
+      supabase.from('documentos').select('holding_id, competencia, created_at'),
+      supabase.from('eventos').select('holding_id, data_prevista').eq('status', 'pendente'),
+      supabase.from('doacoes').select('holding_id, data_prevista, adiada_em').eq('status', 'planejada'),
+    ])
+
+  const jaFechadas = new Set((fechs ?? []).map((f) => f.holding_id))
+  const comDist = new Set((distrib ?? []).filter((d) => d.competencia?.slice(0, 7) === prefixo).map((d) => d.holding_id))
+  const comDoc = new Set(
+    (docs ?? []).filter((d) => (d.competencia?.slice(0, 7) ?? d.created_at.slice(0, 7)) === prefixo && d.holding_id).map((d) => d.holding_id),
+  )
+  const hoje = new Date().toISOString().slice(0, 10)
+  const comVencido = new Set((ev ?? []).filter((e) => e.data_prevista < hoje && e.holding_id).map((e) => e.holding_id))
+  const atrasadasDe = (hid: string) => (doaPlan ?? []).some((d) => d.holding_id === hid && d.data_prevista && d.data_prevista < hoje && !d.adiada_em)
+
+  const novas = (holdings ?? [])
+    .filter((h) => !jaFechadas.has(h.id))
+    .map((h) => ({
+      holding_id: h.id,
+      competencia,
+      distribuicoes_ok: comDist.has(h.id),
+      documentos_ok: comDoc.has(h.id),
+      alertas_ok: !comVencido.has(h.id),
+      alugueis_ok: false,
+      doacoes_ok: !atrasadasDe(h.id),
+    }))
+
+  if (novas.length > 0) {
+    const { error } = await supabase.from('fechamentos').upsert(novas, { onConflict: 'holding_id,competencia' })
+    if (error) redirect(`/app/mes?ano=${ano}&mes=${mes}&error=` + encodeURIComponent(error.message))
+  }
+  revalidatePath('/app/mes')
+  redirect(`/app/mes?ano=${ano}&mes=${mes}`)
+}
+
 // -------------------------- Edições (entidades-filhas) --------------------------
 export async function updateSocio(formData: FormData) {
   const id = s(formData, 'id')
