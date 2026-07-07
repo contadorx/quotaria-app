@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarData } from '@/lib/format'
 import { createFamily } from './actions'
+import { PageHeader, Card, ListCard, EmptyState, Label, SubmitButton, fieldClass } from '@/components/ui'
 
 export default async function AppHome({
   searchParams,
@@ -16,62 +18,44 @@ export default async function AppHome({
 
   return (
     <div>
-      <div className="text-xs font-medium uppercase tracking-[0.2em] text-gold">
-        Cadastro
-      </div>
-      <h1 className="mt-1 font-serif text-3xl text-navy">Suas famílias</h1>
-      <p className="mt-2 max-w-lg text-sm text-navy/60">
-        Cada família agrupa suas holdings, sócios e patrimônio. Comece cadastrando
-        um grupo familiar.
-      </p>
+      <PageHeader
+        eyebrow="Cadastro"
+        title="Famílias"
+        description="Cada família agrupa suas holdings, sócios e patrimônio."
+      />
 
-      {/* nova família */}
-      <form className="mt-8 flex flex-wrap items-end gap-3">
-        <div className="grow">
-          <label htmlFor="name" className="block text-sm font-medium text-navy/80">
-            Nova família
-          </label>
-          <input
-            id="name"
-            name="name"
-            required
-            placeholder="Ex.: Família Andrade"
-            className="mt-1 w-full rounded-md border border-navy/15 bg-white px-3 py-2 text-navy outline-none transition focus:border-gold"
-          />
-        </div>
-        <button
-          formAction={createFamily}
-          className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-cream transition hover:bg-navy-soft"
-        >
-          Adicionar
-        </button>
-      </form>
-      {searchParams?.error && (
-        <p className="mt-2 text-sm font-medium text-red-700">{searchParams.error}</p>
-      )}
-
-      {/* lista */}
-      <div className="mt-8">
-        {!families || families.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-navy/20 p-8 text-center text-sm text-navy/50">
-            Nenhuma família cadastrada ainda.
+      <Card className="p-5">
+        <form className="flex flex-wrap items-end gap-3">
+          <div className="grow">
+            <Label htmlFor="name">Nova família</Label>
+            <input id="name" name="name" required placeholder="Ex.: Família Andrade" className={fieldClass} />
           </div>
+          <SubmitButton action={createFamily}>Adicionar</SubmitButton>
+        </form>
+        {searchParams?.error && (
+          <p className="mt-3 text-sm font-medium text-red-600">{searchParams.error}</p>
+        )}
+      </Card>
+
+      <div className="mt-6">
+        {!families || families.length === 0 ? (
+          <EmptyState>Nenhuma família cadastrada ainda.</EmptyState>
         ) : (
-          <ul className="divide-y divide-navy/10 overflow-hidden rounded-lg border border-navy/10 bg-white/50">
+          <ListCard>
             {families.map((f) => (
-              <li key={f.id}>
-                <Link
-                  href={`/app/familias/${f.id}`}
-                  className="flex items-center justify-between px-5 py-4 transition hover:bg-navy/[0.03]"
-                >
-                  <span className="font-medium text-navy">{f.name}</span>
-                  <span className="text-xs text-navy/40">
-                    criada em {formatarData(f.created_at)} →
-                  </span>
-                </Link>
-              </li>
+              <Link
+                key={f.id}
+                href={`/app/familias/${f.id}`}
+                className="flex items-center justify-between px-5 py-4 transition hover:bg-surface"
+              >
+                <span className="font-semibold text-ink">{f.name}</span>
+                <span className="flex items-center gap-3 text-xs text-ink-soft">
+                  criada em {formatarData(f.created_at)}
+                  <ChevronRight size={16} />
+                </span>
+              </Link>
             ))}
-          </ul>
+          </ListCard>
         )}
       </div>
     </div>

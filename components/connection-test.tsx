@@ -30,19 +30,18 @@ export function ConnectionTest({ configured }: { configured: boolean }) {
         type="button"
         onClick={runTest}
         disabled={!configured || state === 'loading'}
-        className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-cream transition hover:bg-navy-soft disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-soft disabled:cursor-not-allowed disabled:opacity-40"
       >
         {state === 'loading' ? 'Testando…' : 'Testar conexão'}
       </button>
 
       {!configured && (
-        <p className="text-sm text-navy/60">
-          Preencha o <code className="font-mono">.env.local</code> para habilitar o teste.
+        <p className="text-sm text-ink-muted">
+          Preencha o <code className="rounded bg-surface px-1 py-0.5 text-xs">.env.local</code> para habilitar o teste.
         </p>
       )}
-
-      {state === 'ok' && <p className="text-sm font-medium text-green-700">✓ {message}</p>}
-      {state === 'error' && <p className="text-sm font-medium text-red-700">✕ {message}</p>}
+      {state === 'ok' && <p className="text-sm font-medium text-emerald-600">✓ {message}</p>}
+      {state === 'error' && <p className="text-sm font-medium text-red-600">✕ {message}</p>}
     </div>
   )
 }

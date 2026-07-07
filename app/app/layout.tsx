@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Wordmark } from '@/components/brand'
-import { signout } from './actions'
+import { Sidebar, MobileHeader } from '@/components/sidebar'
 
 export default async function AppLayout({
   children,
@@ -17,22 +16,13 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-[100dvh]">
-      <header className="border-b border-navy/10 bg-cream/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-          <a href="/app" className="font-serif text-lg text-navy">
-            <Wordmark />
-          </a>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-navy/50">{user.email}</span>
-            <form action={signout}>
-              <button className="rounded-md border border-navy/15 px-3 py-1 text-navy/70 transition hover:bg-navy/5">
-                Sair
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
+      <Sidebar email={user.email ?? ''} />
+      <MobileHeader />
+      <div className="md:pl-[240px]">
+        <main className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

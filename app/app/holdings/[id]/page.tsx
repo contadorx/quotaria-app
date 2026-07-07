@@ -3,12 +3,16 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import {
   formatarData,
+  formatarMoeda,
   LABEL_TIPO_SOCIETARIO,
   LABEL_STATUS_HOLDING,
   LABEL_TIPO_DIREITO,
   LABEL_CLASSE_QUOTA,
+  LABEL_TIPO_BEM,
+  LABEL_TIPO_CLAUSULA,
 } from '@/lib/format'
-import { createQuota } from '../../actions'
+import { createQuota, createBem, createClausula } from '../../actions'
+import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 
 export default async function HoldingDetail({
   params,
@@ -19,169 +23,259 @@ export default async function HoldingDetail({
 }) {
   const supabase = createClient()
 
-  const { data: holding } = await supabase
-    .from('holdings')
-    .select('*')
-    .eq('id', params.id)
-    .single()
-
+  const { data: holding } = await supabase.from('holdings').select('*').eq('id', params.id).single()
   if (!holding) notFound()
 
   const { data: family } = await supabase
-    .from('families')
-    .select('id, name')
-    .eq('id', holding.family_id)
-    .single()
+    .from('families').select('id, name').eq('id', holding.family_id).single()
 
-  // sócios da família (para o seletor de quotas)
   const { data: socios } = await supabase
-    .from('socios')
-    .select('id, nome')
-    .eq('family_id', holding.family_id)
-    .order('nome')
+    .from('socios').select('id, nome').eq('family_id', holding.family_id).order('nome')
 
-  // quotas desta holding
   const { data: quotas } = await supabase
     .from('quotas')
     .select('id, socio_id, quantidade, percentual, tipo_direito, classe')
-    .eq('holding_id', params.id)
-    .order('created_at')
+    .eq('holding_id', params.id).order('created_at')
 
-  const nomePorSocio = new Map((socios ?? []).map((s) => [s.id, s.nome]))
+  const { data: bens } = await supabase
+    .from('bens')
+    .select('id, tipo, descricao, valor_contabil, municipio_uf, gera_receita')
+    .eq('holding_id', params.id).order('descricao')
+
+  const { data: clausulas } = await supabase
+    .from('clausulas')
+    .select('id, tipo, holding_id, quota_id, bem_id, descricao, registrada_em, responsavel')
+    .eq('accountant_id', holding.accountant_id).order('created_at')
+
+  const nomePorSocio = new Map((socios ?? []).map((so) => [so.id, so.nome]))
   const temSocios = (socios ?? []).length > 0
 
-  const inputClass =
-    'mt-1 w-full rounded-md border border-navy/15 bg-white px-3 py-2 text-sm text-navy outline-none transition focus:border-gold'
+  const quotaLabel = new Map(
+    (quotas ?? []).map((q) => [q.id, `Quota de ${nomePorSocio.get(q.socio_id) ?? 'sócio'} (${LABEL_TIPO_DIREITO[q.tipo_direito]})`]),
+  )
+  const bemLabel = new Map((bens ?? []).map((b) => [b.id, b.descricao]))
 
-  const subsecoes = ['Bens', 'Cláusulas']
+  function escopoLabel(c: { holding_id: string | null; quota_id: string | null; bem_id: string | null }): string {
+    if (c.holding_id) return 'Holding (toda)'
+    if (c.quota_id) return quotaLabel.get(c.quota_id) ?? 'Quota'
+    if (c.bem_id) return bemLabel.get(c.bem_id) ?? 'Bem'
+    return '—'
+  }
+
+  const idsQuotas = new Set((quotas ?? []).map((q) => q.id))
+  const idsBens = new Set((bens ?? []).map((b) => b.id))
+  const clausulasDaHolding = (clausulas ?? []).filter(
+    (c) => c.holding_id === holding.id || (c.quota_id && idsQuotas.has(c.quota_id)) || (c.bem_id && idsBens.has(c.bem_id)),
+  )
 
   return (
     <div>
-      <Link
-        href={family ? `/app/familias/${family.id}` : '/app'}
-        className="text-sm text-navy/50 transition hover:text-navy"
-      >
-        ← {family?.name ?? 'Famílias'}
-      </Link>
+      <PageHeader
+        back={{ href: family ? `/app/familias/${family.id}` : '/app', label: family?.name ?? 'Famílias' }}
+        title={holding.razao_social}
+      />
 
-      <h1 className="mt-3 font-serif text-3xl text-navy">{holding.razao_social}</h1>
-
-      <dl className="mt-6 grid max-w-lg grid-cols-2 gap-x-8 gap-y-3 text-sm">
+      <Card className="mb-8 grid grid-cols-2 gap-x-8 gap-y-4 p-5 sm:grid-cols-4">
         <Info label="Tipo" value={LABEL_TIPO_SOCIETARIO[holding.tipo_societario]} />
         <Info label="Status" value={LABEL_STATUS_HOLDING[holding.status]} />
         <Info label="CNPJ" value={holding.cnpj ?? '—'} />
         <Info label="Constituição" value={formatarData(holding.data_constituicao)} />
-      </dl>
-
-      <div className="mt-10 h-px w-16 bg-gold" />
+      </Card>
 
       {searchParams?.error && (
-        <p className="mt-6 text-sm font-medium text-red-700">{searchParams.error}</p>
+        <p className="mb-6 text-sm font-medium text-red-600">{searchParams.error}</p>
       )}
 
-      {/* ===================== QUOTAS ===================== */}
-      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-navy/80">
-        Quotas
-      </h2>
-      <p className="mt-1 text-xs text-navy/50">
-        Usufruto e nua-propriedade sobre a mesma fração entram como duas linhas
-        (uma para cada sócio).
+      {/* QUOTAS */}
+      <SectionTitle>Quotas</SectionTitle>
+      <p className="mb-0 mt-1 text-xs text-ink-soft">
+        Usufruto e nua-propriedade sobre a mesma fração entram como duas linhas.
       </p>
-
       {!temSocios ? (
-        <div className="mt-4 rounded-lg border border-dashed border-navy/20 p-6 text-sm text-navy/60">
+        <Card className="mt-3 p-6 text-sm text-ink-muted">
           Cadastre sócios na família antes de atribuir quotas.{' '}
           {family && (
-            <Link
-              href={`/app/familias/${family.id}`}
-              className="font-medium text-navy underline-offset-2 hover:underline"
-            >
+            <Link href={`/app/familias/${family.id}`} className="font-semibold text-navy underline-offset-2 hover:underline">
               Ir para a família →
             </Link>
           )}
-        </div>
+        </Card>
       ) : (
-        <form className="mt-4 grid gap-3 rounded-lg border border-navy/10 bg-white/50 p-5 sm:grid-cols-2 lg:grid-cols-5">
-          <input type="hidden" name="holding_id" value={holding.id} />
-          <div className="lg:col-span-2">
-            <label htmlFor="socio_id" className="block text-xs font-medium text-navy/70">
-              Sócio
-            </label>
-            <select id="socio_id" name="socio_id" required className={inputClass}>
-              {(socios ?? []).map((s) => (
-                <option key={s.id} value={s.id}>{s.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="quantidade" className="block text-xs font-medium text-navy/70">
-              Quantidade
-            </label>
-            <input id="quantidade" name="quantidade" type="number" step="0.0001" min="0" defaultValue="0" className={inputClass} />
-          </div>
-          <div>
-            <label htmlFor="percentual" className="block text-xs font-medium text-navy/70">
-              % (opcional)
-            </label>
-            <input id="percentual" name="percentual" type="number" step="0.0001" min="0" max="100" placeholder="50" className={inputClass} />
-          </div>
-          <div>
-            <label htmlFor="tipo_direito" className="block text-xs font-medium text-navy/70">
-              Direito
-            </label>
-            <select id="tipo_direito" name="tipo_direito" className={inputClass}>
-              {Object.entries(LABEL_TIPO_DIREITO).map(([v, label]) => (
-                <option key={v} value={v}>{label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="sm:col-span-2 lg:col-span-5">
-            <button
-              formAction={createQuota}
-              className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-cream transition hover:bg-navy-soft"
-            >
-              Adicionar quota
-            </button>
-          </div>
-        </form>
+        <Card className="mt-3 p-5">
+          <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <input type="hidden" name="holding_id" value={holding.id} />
+            <div className="lg:col-span-2">
+              <Label htmlFor="socio_id">Sócio</Label>
+              <select id="socio_id" name="socio_id" required className={fieldClass}>
+                {(socios ?? []).map((so) => <option key={so.id} value={so.id}>{so.nome}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="quantidade">Quantidade</Label>
+              <input id="quantidade" name="quantidade" type="number" step="0.0001" min="0" defaultValue="0" className={fieldClass} />
+            </div>
+            <div>
+              <Label htmlFor="percentual">% (opcional)</Label>
+              <input id="percentual" name="percentual" type="number" step="0.0001" min="0" max="100" placeholder="50" className={fieldClass} />
+            </div>
+            <div>
+              <Label htmlFor="tipo_direito">Direito</Label>
+              <select id="tipo_direito" name="tipo_direito" className={fieldClass}>
+                {Object.entries(LABEL_TIPO_DIREITO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-5">
+              <SubmitButton action={createQuota}>Adicionar quota</SubmitButton>
+            </div>
+          </form>
+        </Card>
       )}
-
       <div className="mt-4">
         {!quotas || quotas.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-navy/20 p-6 text-center text-sm text-navy/50">
-            Nenhuma quota lançada ainda.
-          </div>
+          <EmptyState>Nenhuma quota lançada ainda.</EmptyState>
         ) : (
-          <ul className="divide-y divide-navy/10 overflow-hidden rounded-lg border border-navy/10 bg-white/50">
-            {quotas.map((q) => (
-              <li key={q.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span className="font-medium text-navy">
-                  {nomePorSocio.get(q.socio_id) ?? 'Sócio removido'}
+          <ListCard>
+            {(quotas ?? []).map((q) => (
+              <div key={q.id} className="flex items-center justify-between px-5 py-3 text-sm">
+                <span className="font-medium text-ink">{nomePorSocio.get(q.socio_id) ?? 'Sócio removido'}</span>
+                <span className="flex items-center gap-2 text-ink-muted">
+                  <span className="num">{q.quantidade}</span> quotas
+                  {q.percentual != null ? <> · <span className="num">{q.percentual}%</span></> : null}
+                  <Pill>{LABEL_TIPO_DIREITO[q.tipo_direito]}</Pill>
+                  {q.classe ? LABEL_CLASSE_QUOTA[q.classe] : ''}
                 </span>
-                <span className="text-navy/60">
-                  {q.quantidade} quotas
-                  {q.percentual != null ? ` · ${q.percentual}%` : ''}
-                  {' · '}
-                  <span className="text-navy/80">{LABEL_TIPO_DIREITO[q.tipo_direito]}</span>
-                  {q.classe ? ` · ${LABEL_CLASSE_QUOTA[q.classe]}` : ''}
-                </span>
-              </li>
+              </div>
             ))}
-          </ul>
+          </ListCard>
         )}
       </div>
 
-      {/* ===================== PRÓXIMA ETAPA ===================== */}
-      <div className="mt-12 grid gap-3 sm:grid-cols-2">
-        {subsecoes.map((s) => (
-          <div
-            key={s}
-            className="rounded-lg border border-dashed border-navy/20 p-5 text-sm text-navy/50"
-          >
-            <span className="font-medium text-navy/70">{s}</span>
-            <p className="mt-1 text-xs text-navy/40">Próxima etapa.</p>
+      {/* BENS */}
+      <div className="mt-10"><SectionTitle>Bens</SectionTitle></div>
+      <Card className="mt-3 p-5">
+        <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <input type="hidden" name="holding_id" value={holding.id} />
+          <div>
+            <Label htmlFor="tipo">Tipo</Label>
+            <select id="tipo" name="tipo" className={fieldClass}>
+              {Object.entries(LABEL_TIPO_BEM).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
           </div>
-        ))}
+          <div className="lg:col-span-2">
+            <Label htmlFor="descricao">Descrição</Label>
+            <input id="descricao" name="descricao" required placeholder="Ex.: Apto 101 - Ed. Central" className={fieldClass} />
+          </div>
+          <div>
+            <Label htmlFor="valor_contabil">Valor contábil</Label>
+            <input id="valor_contabil" name="valor_contabil" type="number" step="0.01" min="0" placeholder="350000" className={fieldClass} />
+          </div>
+          <div>
+            <Label htmlFor="municipio_uf">Município/UF</Label>
+            <input id="municipio_uf" name="municipio_uf" placeholder="Santo André/SP" className={fieldClass} />
+          </div>
+          <div>
+            <Label htmlFor="data_aquisicao">Aquisição</Label>
+            <input id="data_aquisicao" name="data_aquisicao" type="date" className={fieldClass} />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-ink-muted sm:col-span-2 lg:col-span-3">
+            <input type="checkbox" name="gera_receita" className="h-4 w-4 rounded border-line text-navy focus:ring-gold" />
+            Gera receita (ex.: imóvel locado — relevante no IVA da Reforma)
+          </label>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <SubmitButton action={createBem}>Adicionar bem</SubmitButton>
+          </div>
+        </form>
+      </Card>
+      <div className="mt-4">
+        {!bens || bens.length === 0 ? (
+          <EmptyState>Nenhum bem cadastrado ainda.</EmptyState>
+        ) : (
+          <ListCard>
+            {(bens ?? []).map((b) => (
+              <div key={b.id} className="flex items-center justify-between px-5 py-3 text-sm">
+                <span>
+                  <span className="font-medium text-ink">{b.descricao}</span>
+                  <span className="ml-2 text-xs text-ink-soft">
+                    {LABEL_TIPO_BEM[b.tipo]}{b.municipio_uf ? ` · ${b.municipio_uf}` : ''}
+                    {b.gera_receita ? ' · gera receita' : ''}
+                  </span>
+                </span>
+                <span className="num text-ink-muted">{formatarMoeda(b.valor_contabil)}</span>
+              </div>
+            ))}
+          </ListCard>
+        )}
+      </div>
+
+      {/* CLÁUSULAS */}
+      <div className="mt-10"><SectionTitle>Cláusulas</SectionTitle></div>
+      <p className="mt-1 text-xs text-ink-soft">
+        Registro do fato — o instrumento é redigido pelo advogado (campo Responsável).
+      </p>
+      <Card className="mt-3 p-5">
+        <form className="grid gap-4 sm:grid-cols-2">
+          <input type="hidden" name="holding_id" value={holding.id} />
+          <div>
+            <Label htmlFor="clausula_tipo">Tipo</Label>
+            <select id="clausula_tipo" name="tipo" required className={fieldClass}>
+              {Object.entries(LABEL_TIPO_CLAUSULA).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="escopo">Aplica-se a</Label>
+            <select id="escopo" name="escopo" required className={fieldClass}>
+              <option value="holding">Holding (toda)</option>
+              {(quotas ?? []).length > 0 && (
+                <optgroup label="Quotas">
+                  {(quotas ?? []).map((q) => (
+                    <option key={q.id} value={`quota:${q.id}`}>
+                      {nomePorSocio.get(q.socio_id) ?? 'sócio'} — {LABEL_TIPO_DIREITO[q.tipo_direito]}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {(bens ?? []).length > 0 && (
+                <optgroup label="Bens">
+                  {(bens ?? []).map((b) => <option key={b.id} value={`bem:${b.id}`}>{b.descricao}</option>)}
+                </optgroup>
+              )}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="responsavel">Responsável (advogado)</Label>
+            <input id="responsavel" name="responsavel" placeholder="Nome do advogado" className={fieldClass} />
+          </div>
+          <div>
+            <Label htmlFor="registrada_em">Averbada em</Label>
+            <input id="registrada_em" name="registrada_em" type="date" className={fieldClass} />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="clausula_descricao">Observação (opcional)</Label>
+            <input id="clausula_descricao" name="descricao" placeholder="Ex.: averbada na constituição" className={fieldClass} />
+          </div>
+          <div className="sm:col-span-2">
+            <SubmitButton action={createClausula}>Registrar cláusula</SubmitButton>
+          </div>
+        </form>
+      </Card>
+      <div className="mt-4">
+        {clausulasDaHolding.length === 0 ? (
+          <EmptyState>Nenhuma cláusula registrada ainda.</EmptyState>
+        ) : (
+          <ListCard>
+            {clausulasDaHolding.map((c) => (
+              <div key={c.id} className="flex items-center justify-between px-5 py-3 text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="font-medium text-ink">{LABEL_TIPO_CLAUSULA[c.tipo]}</span>
+                  <Pill>{escopoLabel(c)}</Pill>
+                </span>
+                <span className="text-xs text-ink-soft">
+                  {c.responsavel ?? '—'}{c.registrada_em ? ` · ${formatarData(c.registrada_em)}` : ''}
+                </span>
+              </div>
+            ))}
+          </ListCard>
+        )}
       </div>
     </div>
   )
@@ -190,8 +284,8 @@ export default async function HoldingDetail({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wide text-navy/40">{label}</dt>
-      <dd className="mt-0.5 text-navy">{value}</dd>
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-ink-soft">{label}</dt>
+      <dd className="mt-0.5 font-medium text-ink">{value}</dd>
     </div>
   )
 }

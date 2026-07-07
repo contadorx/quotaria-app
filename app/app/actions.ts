@@ -10,6 +10,8 @@ import type {
   RegimeBens,
   TipoDireito,
   ClasseQuota,
+  TipoBem,
+  TipoClausula,
 } from '@/lib/database.types'
 
 export async function signout() {
@@ -130,6 +132,87 @@ export async function createQuota(formData: FormData) {
     percentual: percentualRaw === '' ? null : Number(percentualRaw),
     tipo_direito: tipoDireito,
     classe,
+  })
+  if (error) {
+    redirect(`/app/holdings/${holdingId}?error=` + encodeURIComponent(error.message))
+  }
+
+  revalidatePath(`/app/holdings/${holdingId}`)
+  redirect(`/app/holdings/${holdingId}`)
+}
+
+// -------------------------- Bens --------------------------
+export async function createBem(formData: FormData) {
+  const holdingId = s(formData, 'holding_id')
+  const descricao = s(formData, 'descricao')
+  if (!holdingId) redirect('/app')
+  if (!descricao) {
+    redirect(
+      `/app/holdings/${holdingId}?error=` +
+        encodeURIComponent('Informe a descrição do bem.'),
+    )
+  }
+
+  const valorContabilRaw = s(formData, 'valor_contabil')
+  const valorMercadoRaw = s(formData, 'valor_mercado')
+
+  const supabase = createClient()
+  const { error } = await supabase.from('bens').insert({
+    holding_id: holdingId,
+    tipo: (s(formData, 'tipo') || 'imovel') as TipoBem,
+    descricao,
+    valor_contabil: valorContabilRaw === '' ? null : Number(valorContabilRaw),
+    valor_mercado: valorMercadoRaw === '' ? null : Number(valorMercadoRaw),
+    matricula: orNull(s(formData, 'matricula')),
+    municipio_uf: orNull(s(formData, 'municipio_uf')),
+    data_aquisicao: orNull(s(formData, 'data_aquisicao')),
+    gera_receita: formData.get('gera_receita') === 'on',
+  })
+  if (error) {
+    redirect(`/app/holdings/${holdingId}?error=` + encodeURIComponent(error.message))
+  }
+
+  revalidatePath(`/app/holdings/${holdingId}`)
+  redirect(`/app/holdings/${holdingId}`)
+}
+
+// -------------------------- Cláusulas --------------------------
+export async function createClausula(formData: FormData) {
+  const holdingId = s(formData, 'holding_id')
+  if (!holdingId) redirect('/app')
+
+  const tipo = s(formData, 'tipo') as TipoClausula
+  if (!tipo) {
+    redirect(
+      `/app/holdings/${holdingId}?error=` +
+        encodeURIComponent('Selecione o tipo da cláusula.'),
+    )
+  }
+
+  // Escopo codificado: "holding" | "quota:<id>" | "bem:<id>"
+  const escopo = s(formData, 'escopo')
+  let holding_id: string | null = null
+  let quota_id: string | null = null
+  let bem_id: string | null = null
+  if (escopo === 'holding') holding_id = holdingId
+  else if (escopo.startsWith('quota:')) quota_id = escopo.slice('quota:'.length)
+  else if (escopo.startsWith('bem:')) bem_id = escopo.slice('bem:'.length)
+  else {
+    redirect(
+      `/app/holdings/${holdingId}?error=` +
+        encodeURIComponent('Selecione onde a cláusula se aplica.'),
+    )
+  }
+
+  const supabase = createClient()
+  const { error } = await supabase.from('clausulas').insert({
+    tipo,
+    holding_id,
+    quota_id,
+    bem_id,
+    descricao: orNull(s(formData, 'descricao')),
+    registrada_em: orNull(s(formData, 'registrada_em')),
+    responsavel: orNull(s(formData, 'responsavel')),
   })
   if (error) {
     redirect(`/app/holdings/${holdingId}?error=` + encodeURIComponent(error.message))

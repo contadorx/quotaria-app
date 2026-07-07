@@ -49,3 +49,25 @@ export const LABEL_CLASSE_QUOTA: Record<string, string> = {
   ordinaria: 'Ordinária',
   preferencial: 'Preferencial',
 }
+
+export const LABEL_TIPO_BEM: Record<string, string> = {
+  imovel: 'Imóvel',
+  participacao: 'Participação',
+  veiculo: 'Veículo',
+  aplicacao: 'Aplicação',
+  outro: 'Outro',
+}
+
+export const LABEL_TIPO_CLAUSULA: Record<string, string> = {
+  incomunicabilidade: 'Incomunicabilidade',
+  impenhorabilidade: 'Impenhorabilidade',
+  inalienabilidade: 'Inalienabilidade',
+  reversao: 'Reversão',
+  usufruto_vitalicio: 'Usufruto vitalício',
+  outra: 'Outra',
+}
+
+export function formatarMoeda(v: number | null): string {
+  if (v == null) return '—'
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}

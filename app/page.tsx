@@ -1,63 +1,47 @@
 import { ConnectionTest } from '@/components/connection-test'
-import { Wordmark } from '@/components/brand'
+import { LogoMark, Wordmark } from '@/components/brand'
+import { Card } from '@/components/ui'
 
 export default function Home() {
   const configured =
-    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col justify-center px-6 py-16">
-      <div className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-gold">
-        Fundação · Fase 1
+      <div className="mb-5 flex items-center gap-3">
+        <LogoMark />
+        <Wordmark className="text-2xl text-ink" />
       </div>
 
-      <h1 className="font-serif text-5xl leading-none text-navy">
-        <Wordmark />
-      </h1>
-
-      <p className="mt-4 max-w-md text-navy/70">
-        Infraestrutura do honorário premium. Este é o esqueleto do sistema — o
-        pipeline (Next.js → GitHub → Vercel) e a conexão com o Supabase. As telas
-        do produto entram a partir daqui, uma feature por vez.
+      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-deep">
+        Fundação · Fase 1
+      </div>
+      <p className="mt-3 max-w-md text-ink-muted">
+        Infraestrutura do honorário premium. Este é o esqueleto do sistema — o pipeline
+        (Next.js → GitHub → Vercel) e a conexão com o Supabase.
       </p>
 
-      <div className="mt-10 h-px w-16 bg-gold" />
-
-      <section className="mt-10 rounded-lg border border-navy/10 bg-white/50 p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-navy/80">
+      <Card className="mt-8 p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
           Status do ambiente
         </h2>
-
-        <dl className="mt-4 space-y-2 text-sm">
-          <StatusRow label="Supabase configurado (.env.local)" ok={configured} />
-        </dl>
-
-        <div className="mt-6">
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <span className="text-ink-muted">Supabase configurado (.env.local)</span>
+          <span className={configured ? 'font-semibold text-emerald-600' : 'font-medium text-ink-soft'}>
+            {configured ? '✓ sim' : '— pendente'}
+          </span>
+        </div>
+        <div className="mt-5">
           <ConnectionTest configured={configured} />
         </div>
-      </section>
+      </Card>
 
-      <footer className="mt-12 flex items-center gap-4 text-xs text-navy/40">
+      <footer className="mt-10 flex items-center gap-4 text-xs text-ink-soft">
         <span>ContadorX · uso interno</span>
-        <a
-          href="/login"
-          className="text-navy/60 underline-offset-2 transition hover:text-navy hover:underline"
-        >
+        <a href="/login" className="font-medium text-navy underline-offset-2 transition hover:underline">
           Entrar →
         </a>
       </footer>
     </main>
-  )
-}
-
-function StatusRow({ label, ok }: { label: string; ok: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <dt className="text-navy/70">{label}</dt>
-      <dd className={ok ? 'font-medium text-green-700' : 'font-medium text-navy/40'}>
-        {ok ? '✓ sim' : '— pendente'}
-      </dd>
-    </div>
   )
 }
