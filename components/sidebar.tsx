@@ -16,10 +16,22 @@ import {
 import { LogoMark, Wordmark } from '@/components/brand'
 import { signout } from '@/app/app/actions'
 
-const NAV = [{ href: '/app', label: 'Famílias', icon: Users }]
+const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean }[] = [
+  {
+    href: '/app',
+    label: 'Famílias',
+    icon: Users,
+    match: (p) => p === '/app' || p.startsWith('/app/familias') || p.startsWith('/app/holdings'),
+  },
+  {
+    href: '/app/calendario',
+    label: 'Calendário',
+    icon: CalendarClock,
+    match: (p) => p.startsWith('/app/calendario'),
+  },
+]
 
 const EM_BREVE: { label: string; icon: LucideIcon }[] = [
-  { label: 'Calendário', icon: CalendarClock },
   { label: 'Distribuições', icon: ArrowLeftRight },
   { label: 'Documentos', icon: FolderClosed },
   { label: 'Relatórios', icon: FileText },
@@ -35,7 +47,6 @@ export function Sidebar({
   onToggle: () => void
 }) {
   const pathname = usePathname()
-  const active = pathname.startsWith('/app')
 
   return (
     <aside
@@ -78,8 +89,8 @@ export function Sidebar({
 
       {/* navegação */}
       <nav className={`flex flex-1 flex-col gap-1 ${colapsado ? 'items-center' : ''}`}>
-        {NAV.map(({ href, label, icon: Icon }) => (
-          <NavItem key={href} href={href} label={label} Icon={Icon} active={active} colapsado={colapsado} />
+        {NAV.map(({ href, label, icon: Icon, match }) => (
+          <NavItem key={href} href={href} label={label} Icon={Icon} active={match(pathname)} colapsado={colapsado} />
         ))}
 
         {!colapsado ? (

@@ -13,6 +13,8 @@ import type {
   TipoBem,
   TipoClausula,
   StatusHolding,
+  TipoEvento,
+  StatusEvento,
 } from '@/lib/database.types'
 
 export async function signout() {
@@ -333,4 +335,72 @@ export async function updateHolding(formData: FormData) {
   if (error) redirect(`/app/holdings/${id}?error=` + encodeURIComponent(error.message))
   revalidatePath(`/app/holdings/${id}`)
   redirect(`/app/holdings/${id}`)
+}
+
+// -------------------------- Calendário (eventos) --------------------------
+export async function createEvento(formData: FormData) {
+  const titulo = s(formData, 'titulo')
+  const data = s(formData, 'data_prevista')
+  if (!titulo || !data) {
+    redirect('/app/calendario?error=' + encodeURIComponent('Informe título e data.'))
+  }
+  const supabase = createClient()
+  const { error } = await supabase.from('eventos').insert({
+    titulo,
+    data_prevista: data,
+    tipo: (s(formData, 'tipo') || 'outro') as TipoEvento,
+    holding_id: orNull(s(formData, 'holding_id')),
+    notes: orNull(s(formData, 'notes')),
+  })
+  if (error) redirect('/app/calendario?error=' + encodeURIComponent(error.message))
+  revalidatePath('/app/calendario')
+  redirect('/app/calendario')
+}
+
+export async function toggleEvento(formData: FormData) {
+  const id = s(formData, 'id')
+  const to = s(formData, 'to') === 'concluido' ? 'concluido' : 'pendente'
+  if (!id) redirect('/app/calendario')
+  const supabase = createClient()
+  await supabase
+    .from('eventos')
+    .update({
+      status: to as StatusEvento,
+      concluido_em: to === 'concluido' ? new Date().toISOString().slice(0, 10) : null,
+    })
+    .eq('id', id)
+  revalidatePath('/app/calendario')
+  redirect('/app/calendario')
+}
+
+export async function deleteEvento(formData: FormData) {
+  const id = s(formData, 'id')
+  if (!id) redirect('/app/calendario')
+  const supabase = createClient()
+  await supabase.from('eventos').delete().eq('id', id)
+  revalidatePath('/app/calendario')
+  redirect('/app/calendario')
+}
+
+// Semeia os marcos datados da Reforma como eventos gerais (holding_id null).
+export async function seedMarcosReforma() {
+  const supabase = createClient()
+  const { count } = await supabase
+    .from('eventos')
+    .select('id', { count: 'exact', head: true })
+    .eq('tipo', 'marco_reforma')
+  if ((count ?? 0) > 0) redirect('/app/calendario') // já semeado
+
+  const marcos = [
+    { data_prevista: '2026-08-01', titulo: 'NFS-e passa a destacar CBS' },
+    { data_prevista: '2026-12-31', titulo: 'Último ano do regime antigo — planejar doações pelo valor contábil' },
+    { data_prevista: '2027-01-01', titulo: 'CBS efetiva · fim de PIS/COFINS' },
+    { data_prevista: '2029-01-01', titulo: 'Início da transição do IBS (2029–2032)' },
+    { data_prevista: '2033-01-01', titulo: 'IBS/CBS plenos · fim da transição' },
+  ]
+  await supabase.from('eventos').insert(
+    marcos.map((m) => ({ ...m, tipo: 'marco_reforma' as TipoEvento })),
+  )
+  revalidatePath('/app/calendario')
+  redirect('/app/calendario')
 }

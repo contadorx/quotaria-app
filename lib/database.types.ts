@@ -45,6 +45,15 @@ export type TipoClausula =
   | 'usufruto_vitalicio'
   | 'outra'
 
+export type TipoEvento =
+  | 'ata_anual'
+  | 'revisao'
+  | 'distribuicao'
+  | 'doacao'
+  | 'marco_reforma'
+  | 'outro'
+export type StatusEvento = 'pendente' | 'concluido'
+
 export interface Database {
   public: {
     Tables: {
@@ -309,6 +318,48 @@ export interface Database {
           descricao?: string | null
           registrada_em?: string | null
           responsavel?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      eventos: {
+        Row: {
+          id: string
+          accountant_id: string
+          holding_id: string | null
+          titulo: string
+          tipo: TipoEvento
+          data_prevista: string
+          status: StatusEvento
+          concluido_em: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string | null
+          titulo: string
+          tipo?: TipoEvento
+          data_prevista: string
+          status?: StatusEvento
+          concluido_em?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          accountant_id?: string
+          holding_id?: string | null
+          titulo?: string
+          tipo?: TipoEvento
+          data_prevista?: string
+          status?: StatusEvento
+          concluido_em?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string

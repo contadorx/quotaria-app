@@ -71,3 +71,19 @@ export function formatarMoeda(v: number | null): string {
   if (v == null) return '—'
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
+
+export const LABEL_TIPO_EVENTO: Record<string, string> = {
+  ata_anual: 'Ata anual',
+  revisao: 'Revisão',
+  distribuicao: 'Distribuição',
+  doacao: 'Doação',
+  marco_reforma: 'Marco da Reforma',
+  outro: 'Outro',
+}
+
+// data ISO (YYYY-MM-DD) sem fuso — evita o "menos um dia" do new Date()
+export function formatarDataISO(iso: string | null): string {
+  if (!iso) return '—'
+  const [a, m, d] = iso.slice(0, 10).split('-')
+  return `${d}/${m}/${a}`
+}
