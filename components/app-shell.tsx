@@ -31,7 +31,7 @@ export function AppShell({
   return (
     <div className="min-h-[100dvh]">
       <Sidebar email={email} orgNome={orgNome} colapsado={colapsado} onToggle={toggle} superAdmin={superAdmin} />
-      <MobileHeader />
+      <MobileHeader superAdmin={superAdmin} />
       <div className={`transition-all duration-200 ${colapsado ? 'md:pl-[72px]' : 'md:pl-[240px]'}`}>
         <div className="no-print sticky top-0 z-30 hidden border-b border-line bg-cream/80 backdrop-blur md:block">
           <div className="mx-auto flex max-w-[1100px] items-center justify-end px-8 py-2.5">

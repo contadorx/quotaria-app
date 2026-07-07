@@ -167,9 +167,9 @@ export default async function MesPage({
           {lista.map(({ h, f, s }) => {
             const sug = sugestao(h.id)
             return (
-              <div key={h.id} className="flex items-center gap-3 px-5 py-4">
+              <div key={h.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-4">
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`} />
-                <span className="flex-1 font-medium text-ink">{h.razao_social}</span>
+                <span className="min-w-[8rem] flex-1 font-medium text-ink">{h.razao_social}</span>
                 <span className={`text-xs ${s.cor === 'red' ? 'font-medium text-red-700' : s.cor === 'emerald' ? 'text-emerald-700' : 'text-ink-muted'}`}>{s.label}</span>
                 <Link href={`/app/mes/${h.id}?ano=${ano}&mes=${mes}`} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink">Extrato</Link>
                 {emailsDaHolding(h.id).length > 0 && (
