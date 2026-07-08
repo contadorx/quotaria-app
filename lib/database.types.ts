@@ -1324,8 +1324,12 @@ export interface Database {
         Returns: boolean
       }
       criar_escritorio: {
-        Args: { p_nome: string; p_cnpj?: string | null; p_crc?: string | null }
+        Args: { p_nome: string; p_cnpj?: string | null; p_crc?: string | null; p_ref?: string | null }
         Returns: string
+      }
+      admin_comissoes_parceiros: {
+        Args: Record<PropertyKey, never>
+        Returns: { parceiro_ref: string; organization_id: string; nome: string; plano: string; status: string; valor: number; comissao: number }[]
       }
       aceitar_convite_familia: {
         Args: { p_token: string }
