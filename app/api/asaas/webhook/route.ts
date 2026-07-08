@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { proximoVencimento, type Ciclo } from '@/lib/asaas'
+import { proximoVencimento, asaasFetch, type Ciclo } from '@/lib/asaas'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -51,11 +51,11 @@ export async function POST(req: Request) {
   }
 
   // localiza a organização: primeiro pela assinatura, depois pelo cliente
-  let org: { id: string; ciclo_cobranca: string; assinatura_status: string; ativada_em: string | null } | null = null
+  let org: { id: string; ciclo_cobranca: string; assinatura_status: string; ativada_em: string | null; asaas_subscription_id: string | null; desconto_meses_restantes: number | null; valor_cheio: number | null } | null = null
   if (pg.subscription) {
     const { data } = await admin
       .from('organizations')
-      .select('id, ciclo_cobranca, assinatura_status, ativada_em')
+      .select('id, ciclo_cobranca, assinatura_status, ativada_em, asaas_subscription_id, desconto_meses_restantes, valor_cheio')
       .eq('asaas_subscription_id', pg.subscription)
       .maybeSingle()
     org = data
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
   if (!org && pg.customer) {
     const { data } = await admin
       .from('organizations')
-      .select('id, ciclo_cobranca, assinatura_status, ativada_em')
+      .select('id, ciclo_cobranca, assinatura_status, ativada_em, asaas_subscription_id, desconto_meses_restantes, valor_cheio')
       .eq('asaas_customer_id', pg.customer)
       .maybeSingle()
     org = data
@@ -101,6 +101,31 @@ export async function POST(req: Request) {
       })
       .eq('id', org.id)
     if (error) return NextResponse.json({ erro: error.message }, { status: 500 })
+
+    // Cupom: conta o mês pago e, ao fim da janela, volta a fatura ao valor cheio.
+    // desconto_meses_restantes: >0 = meses restantes; -1 = para sempre; null/0 = sem cupom.
+    const rest = org.desconto_meses_restantes
+    if (rest !== null && rest > 0) {
+      const novo = rest - 1
+      if (novo > 0) {
+        await admin.from('organizations').update({ desconto_meses_restantes: novo }).eq('id', org.id)
+      } else if (org.asaas_subscription_id && org.valor_cheio != null) {
+        // fim da janela: reverte no Asaas e só então limpa o cupom (senão tenta no próximo)
+        try {
+          await asaasFetch(`/subscriptions/${org.asaas_subscription_id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ value: org.valor_cheio }),
+          })
+          await admin.from('organizations').update({
+            valor_mensal: org.valor_cheio, desconto_meses_restantes: 0, cupom_codigo: null,
+          }).eq('id', org.id)
+        } catch {
+          /* não reverteu no Asaas: mantém os meses restantes para tentar de novo */
+        }
+      } else {
+        await admin.from('organizations').update({ desconto_meses_restantes: 0, cupom_codigo: null }).eq('id', org.id)
+      }
+    }
     return NextResponse.json({ ok: true, acao: 'ativada', proximo_vencimento: prox })
   }
 

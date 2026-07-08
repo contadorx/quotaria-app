@@ -815,6 +815,12 @@ export interface Database {
         Update: { chave?: string; assunto?: string; corpo?: string; updated_at?: string }
         Relationships: []
       }
+      cupons: {
+        Row: { id: string; codigo: string; tipo: string; valor: number; duracao_meses: number | null; validade: string | null; limite_usos: number | null; usos: number; ativo: boolean; observacoes: string | null; created_at: string }
+        Insert: { id?: string; codigo: string; tipo: string; valor: number; duracao_meses?: number | null; validade?: string | null; limite_usos?: number | null; usos?: number; ativo?: boolean; observacoes?: string | null; created_at?: string }
+        Update: { id?: string; codigo?: string; tipo?: string; valor?: number; duracao_meses?: number | null; validade?: string | null; limite_usos?: number | null; usos?: number; ativo?: boolean; observacoes?: string | null; created_at?: string }
+        Relationships: []
+      }
       comissao_faturas: {
         Row: { id: string; parceiro_ref: string; competencia: string; valor: number; status: string; nf_numero: string | null; nf_link: string | null; solicitada_em: string | null; recebida_em: string | null; paga_em: string | null; observacoes: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; parceiro_ref: string; competencia: string; valor?: number; status?: string; nf_numero?: string | null; nf_link?: string | null; solicitada_em?: string | null; recebida_em?: string | null; paga_em?: string | null; observacoes?: string | null; created_at?: string; updated_at?: string }
@@ -925,6 +931,9 @@ export interface Database {
           fatura_url: string | null
           fatura_valor: number | null
           fatura_vencimento: string | null
+          cupom_codigo: string | null
+          valor_cheio: number | null
+          desconto_meses_restantes: number | null
           is_teste: boolean
           parceiro_ref: string | null
           obs_admin: string | null
@@ -957,6 +966,9 @@ export interface Database {
           fatura_url?: string | null
           fatura_valor?: number | null
           fatura_vencimento?: string | null
+          cupom_codigo?: string | null
+          valor_cheio?: number | null
+          desconto_meses_restantes?: number | null
           is_teste?: boolean
           parceiro_ref?: string | null
           obs_admin?: string | null
@@ -989,6 +1001,9 @@ export interface Database {
           fatura_url?: string | null
           fatura_valor?: number | null
           fatura_vencimento?: string | null
+          cupom_codigo?: string | null
+          valor_cheio?: number | null
+          desconto_meses_restantes?: number | null
           is_teste?: boolean
           parceiro_ref?: string | null
           obs_admin?: string | null
@@ -1396,6 +1411,12 @@ export interface Database {
         Args: { p_token: string }
         Returns: undefined
       }
+      validar_cupom: {
+        Args: { p_codigo: string }
+        Returns: { codigo: string; tipo: string; valor: number; duracao_meses: number | null }[]
+      }
+      registrar_uso_cupom: { Args: { p_codigo: string }; Returns: undefined }
+      aplicar_cupom_org: { Args: { p_codigo: string; p_valor_cheio: number; p_meses: number }; Returns: undefined }
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

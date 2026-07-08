@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Lock, BellRing, MessageSquare, LifeBuoy, BookOpen, Bot, MessageSquareText, HandCoins, Users, Mail } from 'lucide-react'
+import { Lock, BellRing, MessageSquare, LifeBuoy, BookOpen, Bot, MessageSquareText, HandCoins, Users, Mail, Ticket } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Card, PageHeader } from '@/components/ui'
 import { ContasAdmin, type ContaAdmin } from '@/components/admin/contas-admin'
@@ -134,6 +134,12 @@ export default async function AdminPage({
               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
             >
               <Mail size={15} /> E-mails
+            </Link>
+            <Link
+              href="/app/admin/cupons"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
+            >
+              <Ticket size={15} /> Cupons
             </Link>
           </div>
       {searchParams?.error && (

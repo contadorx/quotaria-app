@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       ciclo?: Ciclo
       cpfCnpj?: string
       billingType?: string
+      cupom?: string
     }
     const plano = planoPorId(String(body.plano ?? ''))
     if (!plano) return NextResponse.json({ erro: 'Selecione um plano.' }, { status: 400 })
@@ -42,6 +43,24 @@ export async function POST(req: Request) {
     const { valorCiclo, valorMensalEquivalente } = precoCiclo(plano.valor, ciclo)
     const descricao = `Quotaria ${plano.nome} · ${ciclo}`
 
+    // Cupom (opcional) — vale para o plano mensal; desconta por N meses (ou sempre).
+    const cupomCodigo = (body.cupom || '').trim()
+    let valorCicloFinal = valorCiclo
+    let valorMensalFinal = valorMensalEquivalente
+    let cupomAplicado: { codigo: string; meses: number } | null = null
+    if (cupomCodigo) {
+      if (ciclo !== 'mensal') {
+        return NextResponse.json({ erro: 'O cupom vale para o plano mensal.' }, { status: 400 })
+      }
+      const { data: cup } = await supabase.rpc('validar_cupom', { p_codigo: cupomCodigo })
+      const c = Array.isArray(cup) ? cup[0] : null
+      if (!c) return NextResponse.json({ erro: 'Cupom inválido ou expirado.' }, { status: 400 })
+      const desc = c.tipo === 'percentual' ? (valorCiclo * Number(c.valor)) / 100 : Number(c.valor)
+      valorCicloFinal = Math.max(0, Math.round((valorCiclo - desc) * 100) / 100)
+      valorMensalFinal = valorCicloFinal
+      cupomAplicado = { codigo: c.codigo, meses: c.duracao_meses ?? -1 } // -1 = para sempre
+    }
+
     // 1) Cliente no Asaas (reaproveita se já existir)
     let customerId = org.asaas_customer_id as string | null
     if (!customerId) {
@@ -62,7 +81,7 @@ export async function POST(req: Request) {
     if (subId) {
       await asaasFetch(`/subscriptions/${subId}`, {
         method: 'PUT',
-        body: JSON.stringify({ billingType, value: valorCiclo, cycle: cicloAsaas(ciclo), description: descricao }),
+        body: JSON.stringify({ billingType, value: valorCicloFinal, cycle: cicloAsaas(ciclo), description: descricao }),
       })
     } else {
       const assinatura = await asaasFetch<{ id: string }>('/subscriptions', {
@@ -70,7 +89,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           customer: customerId,
           billingType,
-          value: valorCiclo,
+          value: valorCicloFinal,
           nextDueDate: hojeISO(),
           cycle: cicloAsaas(ciclo),
           description: descricao,
@@ -93,10 +112,20 @@ export async function POST(req: Request) {
       p_asaas_customer: customerId,
       p_asaas_subscription: subId,
       p_plano: plano.id,
-      p_valor: valorMensalEquivalente,
+      p_valor: valorMensalFinal,
       p_ciclo: ciclo,
     })
     if (rpcErr) return NextResponse.json({ erro: rpcErr.message }, { status: 500 })
+
+    // Grava o cupom na org (valor cheio p/ reverter ao fim) e conta o uso.
+    if (cupomAplicado) {
+      await supabase.rpc('aplicar_cupom_org', {
+        p_codigo: cupomAplicado.codigo,
+        p_valor_cheio: valorMensalEquivalente,
+        p_meses: cupomAplicado.meses,
+      })
+      await supabase.rpc('registrar_uso_cupom', { p_codigo: cupomAplicado.codigo })
+    }
 
     return NextResponse.json({ ok: true, invoiceUrl })
   } catch (e) {

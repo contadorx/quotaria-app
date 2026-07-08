@@ -26,6 +26,7 @@ export function AssinaturaCheckout({
   const [ciclo, setCiclo] = useState<Ciclo>(cicloInicial ?? 'mensal')
   const [cpfCnpj, setCpfCnpj] = useState('')
   const [billingType, setBillingType] = useState('PIX')
+  const [cupom, setCupom] = useState('')
   const [carregando, setCarregando] = useState<'assinar' | 'fatura' | null>(null)
   const [erro, setErro] = useState('')
 
@@ -48,7 +49,7 @@ export function AssinaturaCheckout({
       const res = await fetch('/api/assinatura/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plano, ciclo, cpfCnpj: doc, billingType }),
+        body: JSON.stringify({ plano, ciclo, cpfCnpj: doc, billingType, cupom: cupom.trim() || undefined }),
       })
       const data = await res.json()
       if (!res.ok || !data.ok) {
@@ -172,6 +173,19 @@ export function AssinaturaCheckout({
             <option value="UNDEFINED">Deixar o cliente escolher</option>
           </select>
         </div>
+        {ciclo === 'mensal' && (
+          <div className="sm:col-span-2">
+            <label htmlFor="cupom" className="text-xs font-medium text-ink-muted">Cupom de desconto (opcional)</label>
+            <input
+              id="cupom"
+              value={cupom}
+              onChange={(e) => setCupom(e.target.value.toUpperCase())}
+              placeholder="Ex.: FUNDADOR6"
+              className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm uppercase outline-none focus:border-gold"
+            />
+            <p className="mt-1 text-[11px] text-ink-soft">O desconto é validado ao assinar. Vale no plano mensal.</p>
+          </div>
+        )}
         <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
           <p className="text-sm text-ink">
             <span className="font-bold text-navy">{brl(preco.valorCiclo)}</span>
