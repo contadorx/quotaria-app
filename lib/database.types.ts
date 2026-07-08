@@ -855,6 +855,8 @@ export interface Database {
           status: StatusRadar
           lgpd_confirmado_em: string | null
           notes: string | null
+          leitura_ia: string | null
+          leitura_ia_em: string | null
           created_at: string
           updated_at: string
         }
@@ -879,6 +881,8 @@ export interface Database {
           status?: StatusRadar
           lgpd_confirmado_em?: string | null
           notes?: string | null
+          leitura_ia?: string | null
+          leitura_ia_em?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -903,6 +907,8 @@ export interface Database {
           status?: StatusRadar
           lgpd_confirmado_em?: string | null
           notes?: string | null
+          leitura_ia?: string | null
+          leitura_ia_em?: string | null
           created_at?: string
           updated_at?: string
         }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/format'
 import { PrintButton } from '@/components/print-button'
 import { MarcaEscritorio, AssinaturaEscritorio } from '@/components/marca-escritorio'
+import { LeituraIA } from '@/components/leitura-ia'
 import {
   cenarioSucessorio, cenarioLocacao, achados, semaforo, recomendacoes,
   type ClienteDiagnostico,
@@ -247,6 +248,15 @@ export default async function DiagnosticoPage({ params }: { params: { id: string
               </li>
             ))}
           </ol>
+        </section>
+
+        {/* 5. leitura do consultor (IA) */}
+        <section className="mt-7 no-print">
+          <LeituraIA
+            radarId={params.id}
+            inicial={(data as { leitura_ia?: string | null }).leitura_ia ?? null}
+            inicialEm={(data as { leitura_ia_em?: string | null }).leitura_ia_em ?? null}
+          />
         </section>
 
         {/* fronteira / disclaimer */}
