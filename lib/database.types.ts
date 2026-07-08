@@ -815,6 +815,12 @@ export interface Database {
         Update: { chave?: string; assunto?: string; corpo?: string; updated_at?: string }
         Relationships: []
       }
+      vendas_config: {
+        Row: { id: number; system_prompt: string | null; modelo: string | null; ativo: boolean; updated_at: string }
+        Insert: { id?: number; system_prompt?: string | null; modelo?: string | null; ativo?: boolean; updated_at?: string }
+        Update: { id?: number; system_prompt?: string | null; modelo?: string | null; ativo?: boolean; updated_at?: string }
+        Relationships: []
+      }
       cupons: {
         Row: { id: string; codigo: string; tipo: string; valor: number; duracao_meses: number | null; validade: string | null; limite_usos: number | null; usos: number; ativo: boolean; observacoes: string | null; created_at: string }
         Insert: { id?: string; codigo: string; tipo: string; valor: number; duracao_meses?: number | null; validade?: string | null; limite_usos?: number | null; usos?: number; ativo?: boolean; observacoes?: string | null; created_at?: string }
@@ -1423,6 +1429,8 @@ export interface Database {
       }
       registrar_uso_cupom: { Args: { p_codigo: string }; Returns: undefined }
       aplicar_cupom_org: { Args: { p_codigo: string; p_valor_cheio: number; p_meses: number }; Returns: undefined }
+      admin_vendas: { Args: Record<PropertyKey, never>; Returns: Json }
+      admin_vendas_salvar: { Args: { p_prompt: string; p_modelo: string; p_ativo: boolean }; Returns: undefined }
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
