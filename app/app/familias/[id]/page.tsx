@@ -13,7 +13,7 @@ import {
   LABEL_ESTADO_CIVIL,
   LABEL_REGIME_BENS,
 } from '@/lib/format'
-import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato, convidarFamilia, revogarAcessoFamilia } from '../../actions'
+import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato, convidarFamilia, revogarAcessoFamilia, convidarAdvogado, revogarAcessoAdvogado } from '../../actions'
 import { headers } from 'next/headers'
 import { CopyButton } from '@/components/copy-button'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
@@ -46,6 +46,11 @@ export default async function FamilyDetail({
   const { data: acessos } = await supabase
     .from('family_access')
     .select('id, email, aceito_em, convite_token, created_at')
+    .eq('family_id', params.id)
+    .order('created_at')
+  const { data: acessosAdv } = await supabase
+    .from('advogado_access')
+    .select('id, email, nivel, aceito_em, convite_token, created_at')
     .eq('family_id', params.id)
     .order('created_at')
   const h = headers()
@@ -308,6 +313,57 @@ export default async function FamilyDetail({
                     </>
                   )}
                   <DeleteButton action={revogarAcessoFamilia} id={a.id} label={`o acesso de ${a.email}`} extra={{ family_id: family.id }} />
+                </div>
+              )
+            })}
+          </ListCard>
+        )}
+      </div>
+
+      {/* HOLDINGS */}
+      <div className="mt-10"><SectionTitle>Acesso do advogado</SectionTitle></div>
+      <p className="mt-1 text-sm text-ink-muted">
+        Convide o advogado parceiro para esta família específica. Em <strong>leitura</strong>, ele acompanha a estrutura;
+        em <strong>contribuição</strong>, também registra cláusulas e sobe peças ao cofre. Ele nunca vê suas outras famílias.
+      </p>
+      <Card className="mt-3 p-5">
+        <form className="flex flex-wrap items-end gap-3">
+          <input type="hidden" name="family_id" value={family.id} />
+          <div className="grow">
+            <Label htmlFor="adv_email">E-mail do advogado</Label>
+            <input id="adv_email" name="email" type="email" placeholder="advogado@escritorio.adv.br" className={fieldClass} />
+          </div>
+          <div>
+            <Label htmlFor="adv_nivel">Nível</Label>
+            <select id="adv_nivel" name="nivel" className={fieldClass} defaultValue="leitura">
+              <option value="leitura">Somente leitura</option>
+              <option value="contribuicao">Contribuição</option>
+            </select>
+          </div>
+          <SubmitButton action={convidarAdvogado}>Criar convite</SubmitButton>
+        </form>
+      </Card>
+      <div className="mt-3">
+        {!acessosAdv || acessosAdv.length === 0 ? (
+          <EmptyState>Nenhum advogado com acesso a esta família.</EmptyState>
+        ) : (
+          <ListCard>
+            {acessosAdv.map((a) => {
+              const link = `${base}/parceiro/convite/${a.convite_token}`
+              return (
+                <div key={a.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+                  <span className="min-w-[10rem] flex-1 font-medium text-ink">{a.email}</span>
+                  <Pill>{a.nivel === 'contribuicao' ? 'contribuição' : 'leitura'}</Pill>
+                  {a.aceito_em ? (
+                    <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">ativo</span>
+                  ) : (
+                    <>
+                      <span className="rounded-md bg-cream px-2 py-0.5 text-[11px] font-medium text-navy">convite pendente</span>
+                      <span className="max-w-[16rem] truncate text-xs text-ink-soft" title={link}>{link}</span>
+                      <CopyButton text={link} />
+                    </>
+                  )}
+                  <DeleteButton action={revogarAcessoAdvogado} id={a.id} label={`o acesso de ${a.email}`} extra={{ family_id: family.id }} />
                 </div>
               )
             })}

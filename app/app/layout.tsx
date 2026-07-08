@@ -23,7 +23,10 @@ export default async function AppLayout({
   if (!orgId) {
     const { data: acesso } = await supabase
       .from('family_access').select('id').not('aceito_em', 'is', null).limit(1).maybeSingle()
-    redirect(acesso ? '/portal' : '/onboarding')
+    if (acesso) redirect('/portal')
+    const { data: acessoAdv } = await supabase
+      .from('advogado_access').select('id').not('aceito_em', 'is', null).limit(1).maybeSingle()
+    redirect(acessoAdv ? '/parceiro' : '/onboarding')
   }
 
   const { data: org } = await supabase
