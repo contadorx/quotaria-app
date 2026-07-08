@@ -809,6 +809,12 @@ export interface Database {
         Update: { id?: string; ref?: string; nome?: string; email?: string | null; documento?: string | null; chave_pix?: string | null; ativo?: boolean; observacoes?: string | null; created_at?: string; updated_at?: string }
         Relationships: []
       }
+      comissao_mensagens: {
+        Row: { chave: string; assunto: string; corpo: string; updated_at: string }
+        Insert: { chave: string; assunto: string; corpo: string; updated_at?: string }
+        Update: { chave?: string; assunto?: string; corpo?: string; updated_at?: string }
+        Relationships: []
+      }
       comissao_faturas: {
         Row: { id: string; parceiro_ref: string; competencia: string; valor: number; status: string; nf_numero: string | null; nf_link: string | null; solicitada_em: string | null; recebida_em: string | null; paga_em: string | null; observacoes: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; parceiro_ref: string; competencia: string; valor?: number; status?: string; nf_numero?: string | null; nf_link?: string | null; solicitada_em?: string | null; recebida_em?: string | null; paga_em?: string | null; observacoes?: string | null; created_at?: string; updated_at?: string }

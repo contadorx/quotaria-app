@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { enviarEmail } from '@/lib/brevo'
 import type {
   TipoSocietario,
   PapelFamiliar,
@@ -712,13 +714,22 @@ export async function convidarFamilia(formData: FormData) {
     redirect(`/app/familias/${familyId}?error=` + encodeURIComponent('Informe um e-mail válido para o convite.'))
   }
   const supabase = createClient()
-  const { error } = await supabase.from('family_access').insert({ family_id: familyId, email })
+  const { data: novo, error } = await supabase.from('family_access').insert({ family_id: familyId, email }).select('convite_token').single()
   if (error) {
     const msg = error.message.includes('duplicate') ? 'Já existe um convite para esse e-mail nesta família.' : error.message
     redirect(`/app/familias/${familyId}?error=` + encodeURIComponent(msg))
   }
+  const h = headers()
+  const link = `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('host')}/portal/convite/${novo!.convite_token}`
+  const env = await enviarEmail({
+    para: email,
+    assunto: 'Você foi convidado a acompanhar sua família no Quotaria',
+    corpoTexto: 'Olá!\n\nSeu escritório de contabilidade preparou um portal para você acompanhar, em modo leitura, a estrutura da sua família — o que foi feito, a sucessão em andamento e os documentos guardados.\n\nToque no botão abaixo para criar seu acesso.',
+    botao: { texto: 'Acessar o portal', url: link },
+  })
   revalidatePath(`/app/familias/${familyId}`)
-  redirect(`/app/familias/${familyId}?message=` + encodeURIComponent('Convite criado. Copie o link e envie para a família.'))
+  const msg = env.ok ? 'Convite enviado por e-mail. O link também está na lista para copiar.' : 'Convite criado. Copie o link e envie para a família.'
+  redirect(`/app/familias/${familyId}?message=` + encodeURIComponent(msg))
 }
 
 export async function revogarAcessoFamilia(formData: FormData) {
@@ -740,13 +751,22 @@ export async function convidarAdvogado(formData: FormData) {
     redirect(`/app/familias/${familyId}?error=` + encodeURIComponent('Informe um e-mail válido para o convite.'))
   }
   const supabase = createClient()
-  const { error } = await supabase.from('advogado_access').insert({ family_id: familyId, email, nivel })
+  const { data: novo, error } = await supabase.from('advogado_access').insert({ family_id: familyId, email, nivel }).select('convite_token').single()
   if (error) {
     const msg = error.message.includes('duplicate') ? 'Já existe um convite de advogado para esse e-mail nesta família.' : error.message
     redirect(`/app/familias/${familyId}?error=` + encodeURIComponent(msg))
   }
+  const h = headers()
+  const link = `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('host')}/parceiro/convite/${novo!.convite_token}`
+  const env = await enviarEmail({
+    para: email,
+    assunto: 'Convite de acesso a uma família no Quotaria',
+    corpoTexto: `Olá!\n\nVocê foi convidado como parceiro para acompanhar uma família específica no Quotaria, no nível "${nivel === 'contribuicao' ? 'contribuição' : 'leitura'}".\n\nToque no botão abaixo para criar seu acesso.`,
+    botao: { texto: 'Acessar', url: link },
+  })
   revalidatePath(`/app/familias/${familyId}`)
-  redirect(`/app/familias/${familyId}?message=` + encodeURIComponent('Convite do advogado criado. Copie o link e envie.'))
+  const msg = env.ok ? 'Convite enviado por e-mail. O link também está na lista para copiar.' : 'Convite do parceiro criado. Copie o link e envie.'
+  redirect(`/app/familias/${familyId}?message=` + encodeURIComponent(msg))
 }
 
 export async function revogarAcessoAdvogado(formData: FormData) {

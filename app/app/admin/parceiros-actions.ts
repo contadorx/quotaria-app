@@ -3,6 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { enviarEmail } from '@/lib/brevo'
+import { formatarMoeda } from '@/lib/format'
+
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+const compLabel = (iso: string) => { const [y, m] = iso.split('-'); return `${MESES[Number(m) - 1]}/${y}` }
+const subst = (tpl: string, c: Record<string, string>) => tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => c[k] ?? '')
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim()
 const orNull = (v: string) => (v ? v : null)
@@ -95,4 +101,57 @@ export async function excluirFatura(formData: FormData) {
   await supabase.from('comissao_faturas').delete().eq('id', str(formData, 'id'))
   revalidatePath('/app/admin/comissoes')
   redirect('/app/admin/comissoes?message=' + encodeURIComponent('Fatura removida.'))
+}
+
+// ───────────────────────── Envio real pela Brevo (e-mail transacional)
+export async function enviarEmailFatura(formData: FormData) {
+  const id = str(formData, 'id')
+  const chave = str(formData, 'chave') // solicitar_nf | lembrete | pagamento
+  const supabase = createClient()
+
+  const { data: f } = await supabase.from('comissao_faturas')
+    .select('id, parceiro_ref, competencia, valor, nf_numero, status').eq('id', id).maybeSingle()
+  if (!f) redirect('/app/admin/comissoes?error=' + encodeURIComponent('Fatura não encontrada.'))
+  const { data: p } = await supabase.from('parceiros')
+    .select('nome, email, documento, chave_pix').eq('ref', f!.parceiro_ref).maybeSingle()
+  if (!p?.email) redirect('/app/admin/comissoes?error=' + encodeURIComponent('Parceiro sem e-mail cadastrado (cadastre em Parceiros).'))
+  const { data: m } = await supabase.from('comissao_mensagens').select('assunto, corpo').eq('chave', chave).maybeSingle()
+  if (!m) redirect('/app/admin/comissoes?error=' + encodeURIComponent('Modelo de e-mail não encontrado.'))
+
+  const campos = {
+    nome: p!.nome,
+    competencia: compLabel(f!.competencia),
+    valor: formatarMoeda(Number(f!.valor)),
+    documento: p!.documento ? `${p!.nome} (${p!.documento})` : p!.nome,
+    pix: p!.chave_pix ?? '',
+    nf_numero: f!.nf_numero ?? '',
+  }
+  const r = await enviarEmail({ para: p!.email, assunto: subst(m!.assunto, campos), corpoTexto: subst(m!.corpo, campos) })
+  if (!r.ok) {
+    const msg = r.skipped
+      ? 'E-mail não configurado. Defina BREVO_API_KEY e EMAIL_FROM na Vercel — ou use "abrir no e-mail".'
+      : ('Falha no envio: ' + (r.erro ?? ''))
+    redirect('/app/admin/comissoes?error=' + encodeURIComponent(msg))
+  }
+  if (chave === 'solicitar_nf' && f!.status === 'a_enviar') {
+    await supabase.from('comissao_faturas').update({ status: 'nf_solicitada', solicitada_em: new Date().toISOString() }).eq('id', id)
+  }
+  revalidatePath('/app/admin/comissoes')
+  redirect('/app/admin/comissoes?message=' + encodeURIComponent('E-mail enviado ao parceiro pela Brevo.'))
+}
+
+// ───────────────────────── Régua de comunicação (mensagens editáveis)
+export async function salvarReguaComissao(formData: FormData) {
+  const supabase = createClient()
+  const chaves = ['solicitar_nf', 'lembrete', 'pagamento'] as const
+  for (const chave of chaves) {
+    const assunto = str(formData, `${chave}_assunto`)
+    const corpo = str(formData, `${chave}_corpo`)
+    if (!assunto || !corpo) continue
+    await supabase.from('comissao_mensagens')
+      .update({ assunto, corpo, updated_at: new Date().toISOString() })
+      .eq('chave', chave)
+  }
+  revalidatePath('/app/admin/comissoes')
+  redirect('/app/admin/comissoes?message=' + encodeURIComponent('Régua de comunicação atualizada.'))
 }

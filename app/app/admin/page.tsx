@@ -79,8 +79,8 @@ export default async function AdminPage({
         eyebrow="Negócio"
         title="Painel do negócio"
         description="O Quotaria como empresa: assinantes, receita e saúde da base."
-        action={
-          <div className="flex items-center gap-2">
+      />
+      <div className="flex flex-wrap gap-2">
             <Link
               href="/app/admin/cobranca"
               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
@@ -130,8 +130,6 @@ export default async function AdminPage({
               <Users size={15} /> Parceiros
             </Link>
           </div>
-        }
-      />
       {searchParams?.error && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
           {searchParams.error}

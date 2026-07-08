@@ -4,6 +4,10 @@
 //   EMAIL_FROM      -> remetente (ex.: quotaria@contadorx.com.br)
 //   EMAIL_FROM_NAME -> nome do remetente (padrão: Quotaria)
 
+export function emailConfigurado(): boolean {
+  return !!process.env.BREVO_API_KEY && !!process.env.EMAIL_FROM
+}
+
 export async function enviarEmail(opts: {
   para: string
   assunto: string

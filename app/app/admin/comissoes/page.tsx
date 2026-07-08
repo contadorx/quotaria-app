@@ -5,7 +5,8 @@ import { EditDialog } from '@/components/edit-dialog'
 import { PendingButton } from '@/components/submit-button'
 import { DeleteButton } from '@/components/delete-button'
 import { formatarMoeda } from '@/lib/format'
-import { gerarFatura, marcarNfSolicitada, marcarNfRecebida, marcarPaga, excluirFatura } from '../parceiros-actions'
+import { gerarFatura, marcarNfSolicitada, marcarNfRecebida, marcarPaga, excluirFatura, salvarReguaComissao, enviarEmailFatura } from '../parceiros-actions'
+import { emailConfigurado } from '@/lib/brevo'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,9 +25,13 @@ function compLabel(iso: string) {
 function mailto(to: string, subject: string, body: string) {
   return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
+function subst(tpl: string, campos: Record<string, string>) {
+  return tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => campos[k] ?? '')
+}
 
 export default async function AdminComissoesPage({ searchParams }: { searchParams: { error?: string; message?: string } }) {
   const supabase = createClient()
+  const emailOk = emailConfigurado()
   const { data } = await supabase.rpc('admin_comissoes_parceiros')
   const rows = data as Row[] | null
   if (!rows) {
@@ -48,6 +53,9 @@ export default async function AdminComissoesPage({ searchParams }: { searchParam
   for (const f of (faturasData ?? []) as Fatura[]) {
     const l = faturasDe.get(f.parceiro_ref) ?? []; l.push(f); faturasDe.set(f.parceiro_ref, l)
   }
+  const { data: msgsData } = await supabase.from('comissao_mensagens').select('chave, assunto, corpo')
+  const msg = new Map<string, { assunto: string; corpo: string }>((msgsData ?? []).map((m) => [m.chave, { assunto: m.assunto, corpo: m.corpo }]))
+  const mget = (chave: string) => msg.get(chave) ?? { assunto: '', corpo: '' }
 
   const hoje = new Date()
   const comp = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`
@@ -72,6 +80,33 @@ export default async function AdminComissoesPage({ searchParams }: { searchParam
 
       {searchParams?.message && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">{searchParams.message}</p>}
       {searchParams?.error && <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700">{searchParams.error}</p>}
+      {!emailOk && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+          Envio automático por e-mail desligado. Para ativar, defina <code>BREVO_API_KEY</code> e <code>EMAIL_FROM</code> nas variáveis da Vercel. Enquanto isso, use o link <strong>abrir no e-mail</strong>.
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3">
+        <EditDialog title="Régua de comunicação da comissão" label="✉ Ajustar régua de comunicação">
+          <form className="space-y-5">
+            <p className="text-xs text-ink-muted">
+              Campos que o sistema substitui: <code>{'{{nome}}'}</code> <code>{'{{competencia}}'}</code> <code>{'{{valor}}'}</code> <code>{'{{documento}}'}</code> <code>{'{{pix}}'}</code> <code>{'{{nf_numero}}'}</code>.
+            </p>
+            {([['solicitar_nf', '1 · Pedido de NF (comissão do mês)'], ['lembrete', '2 · Lembrete da NF'], ['pagamento', '3 · Aviso de pagamento']] as const).map(([chave, titulo]) => {
+              const m = mget(chave)
+              return (
+                <div key={chave} className="rounded-lg border border-line p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gold-deep">{titulo}</p>
+                  <div><Label htmlFor={`${chave}_assunto`}>Assunto</Label><input id={`${chave}_assunto`} name={`${chave}_assunto`} defaultValue={m.assunto} className={fieldClass} /></div>
+                  <div className="mt-2"><Label htmlFor={`${chave}_corpo`}>Mensagem</Label><textarea id={`${chave}_corpo`} name={`${chave}_corpo`} rows={6} defaultValue={m.corpo} className={fieldClass} /></div>
+                </div>
+              )
+            })}
+            <SubmitButton action={salvarReguaComissao}>Salvar régua</SubmitButton>
+          </form>
+        </EditDialog>
+        <a href="/app/admin/parceiros" className="text-sm font-medium text-ink-muted underline">Cadastro de parceiros →</a>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4"><p className="text-xs font-semibold uppercase tracking-wider text-ink-soft">Parceiros com indicação</p><p className="mt-1 text-2xl font-extrabold text-navy">{parceiros.length}</p></Card>
@@ -124,9 +159,15 @@ export default async function AdminComissoesPage({ searchParams }: { searchParam
                   ) : (
                     <div className="mt-2 divide-y divide-line">
                       {faturas.map((f) => {
-                        const dadosNf = cad?.documento ? `${cad?.nome} (${cad?.documento})` : (cad?.nome ?? nome)
-                        const bodySolicita = `Olá, ${cad?.nome ?? ''}!\n\nSua comissão recorrente do Quotaria referente a ${compLabel(f.competencia)} fechou em ${formatarMoeda(Number(f.valor))} (20% das assinaturas ativas que você indicou).\n\nPara o pagamento, emita a nota fiscal de ${formatarMoeda(Number(f.valor))} em nome de ${dadosNf} e responda este e-mail com o PDF.\nAssim que a NF chegar, faço o PIX${cad?.chave_pix ? ' (' + cad?.chave_pix + ')' : ''} no mesmo dia.\n\nObrigado pela parceria!\nLeandro — Quotaria`
-                        const bodyPaga = `Olá, ${cad?.nome ?? ''}!\n\nA comissão de ${compLabel(f.competencia)} (${formatarMoeda(Number(f.valor))}) foi paga via PIX.${f.nf_numero ? '\nNF ' + f.nf_numero + ' recebida e arquivada.' : ''}\n\nAté o próximo mês!\nLeandro — Quotaria`
+                        const campos = {
+                          nome: cad?.nome ?? '',
+                          competencia: compLabel(f.competencia),
+                          valor: formatarMoeda(Number(f.valor)),
+                          documento: cad?.documento ? `${cad?.nome} (${cad?.documento})` : (cad?.nome ?? nome),
+                          pix: cad?.chave_pix ?? '',
+                          nf_numero: f.nf_numero ?? '',
+                        }
+                        const mSol = mget('solicitar_nf'), mLem = mget('lembrete'), mPag = mget('pagamento')
                         return (
                           <div key={f.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
                             <span className="w-20 font-semibold text-ink">{compLabel(f.competencia)}</span>
@@ -136,11 +177,20 @@ export default async function AdminComissoesPage({ searchParams }: { searchParam
                             </span>
                             {f.nf_numero && <span className="text-[11px] text-ink-soft">NF {f.nf_numero}</span>}
                             <div className="ml-auto flex flex-wrap items-center gap-2">
+                              {f.status === 'a_enviar' && emailOk && cad?.email && (
+                                <form><input type="hidden" name="id" value={f.id} /><input type="hidden" name="chave" value="solicitar_nf" /><PendingButton action={enviarEmailFatura} className="rounded-md bg-navy px-2 py-1 text-[11px] font-semibold text-white hover:bg-navy-soft">✉ Enviar pedido de NF</PendingButton></form>
+                              )}
                               {f.status === 'a_enviar' && cad?.email && (
-                                <a href={mailto(cad.email, `Quotaria — sua comissão de ${compLabel(f.competencia)}: ${formatarMoeda(Number(f.valor))}`, bodySolicita)} className="rounded-md border border-navy px-2 py-1 text-[11px] font-semibold text-navy hover:bg-navy hover:text-white">✉ Pedir NF</a>
+                                <a href={mailto(cad.email, subst(mSol.assunto, campos), subst(mSol.corpo, campos))} className="text-[11px] text-ink-soft underline hover:text-navy">↗ e-mail</a>
                               )}
                               {f.status === 'a_enviar' && (
                                 <form><input type="hidden" name="id" value={f.id} /><PendingButton action={marcarNfSolicitada} className="text-[11px] text-ink-soft hover:text-navy">marcar solicitada</PendingButton></form>
+                              )}
+                              {f.status === 'nf_solicitada' && emailOk && cad?.email && (
+                                <form><input type="hidden" name="id" value={f.id} /><input type="hidden" name="chave" value="lembrete" /><PendingButton action={enviarEmailFatura} className="rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-ink-muted hover:border-gold">✉ Enviar lembrete</PendingButton></form>
+                              )}
+                              {f.status === 'nf_solicitada' && cad?.email && (
+                                <a href={mailto(cad.email, subst(mLem.assunto, campos), subst(mLem.corpo, campos))} className="text-[11px] text-ink-soft underline hover:text-navy">↗ e-mail</a>
                               )}
                               {f.status === 'nf_solicitada' && (
                                 <EditDialog title={`Registrar NF — ${compLabel(f.competencia)}`} label="Registrar NF">
@@ -152,8 +202,11 @@ export default async function AdminComissoesPage({ searchParams }: { searchParam
                                   </form>
                                 </EditDialog>
                               )}
+                              {f.status === 'nf_recebida' && emailOk && cad?.email && (
+                                <form><input type="hidden" name="id" value={f.id} /><input type="hidden" name="chave" value="pagamento" /><PendingButton action={enviarEmailFatura} className="rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-ink-muted hover:border-gold">✉ Enviar aviso de pagamento</PendingButton></form>
+                              )}
                               {f.status === 'nf_recebida' && cad?.email && (
-                                <a href={mailto(cad.email, `Quotaria — comissão de ${compLabel(f.competencia)} paga`, bodyPaga)} className="rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-ink-muted hover:border-gold">✉ Aviso de pagamento</a>
+                                <a href={mailto(cad.email, subst(mPag.assunto, campos), subst(mPag.corpo, campos))} className="text-[11px] text-ink-soft underline hover:text-navy">↗ e-mail</a>
                               )}
                               {f.status === 'nf_recebida' && (
                                 <form><input type="hidden" name="id" value={f.id} /><PendingButton action={marcarPaga} className="rounded-md bg-navy px-2 py-1 text-[11px] font-semibold text-white hover:bg-navy-soft">marcar paga</PendingButton></form>
