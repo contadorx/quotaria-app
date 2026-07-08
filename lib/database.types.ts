@@ -821,6 +821,12 @@ export interface Database {
         Update: { id?: string; parceiro_ref?: string; competencia?: string; valor?: number; status?: string; nf_numero?: string | null; nf_link?: string | null; solicitada_em?: string | null; recebida_em?: string | null; paga_em?: string | null; observacoes?: string | null; created_at?: string; updated_at?: string }
         Relationships: []
       }
+      radar_atividades: {
+        Row: { id: string; accountant_id: string; organization_id: string; radar_id: string; tipo: string; descricao: string | null; vence_em: string | null; concluida_em: string | null; created_at: string }
+        Insert: { id?: string; accountant_id?: string; organization_id?: string; radar_id: string; tipo?: string; descricao?: string | null; vence_em?: string | null; concluida_em?: string | null; created_at?: string }
+        Update: { id?: string; accountant_id?: string; organization_id?: string; radar_id?: string; tipo?: string; descricao?: string | null; vence_em?: string | null; concluida_em?: string | null; created_at?: string }
+        Relationships: []
+      }
       radar_clientes: {
         Row: {
           id: string

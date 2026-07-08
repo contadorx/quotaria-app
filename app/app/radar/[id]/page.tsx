@@ -8,13 +8,18 @@ import {
   irpfAnualAluguel, tributoHoldingAluguel, economiaAnualAluguel,
   custoNaoPlanejar, frasePronta, LABEL_STATUS_RADAR,
 } from '@/lib/radar'
-import { updateRadarSinais, updateRadarStatus, deleteRadarCliente } from '../../actions'
+import { updateRadarSinais, updateRadarStatus, deleteRadarCliente, criarAtividadeRadar, concluirAtividadeRadar, reabrirAtividadeRadar, excluirAtividadeRadar } from '../../actions'
 import { PageHeader, Card, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { EditDialog } from '@/components/edit-dialog'
 import { DeleteButton } from '@/components/delete-button'
 import { CopyButton } from '@/components/copy-button'
 import { PendingButton } from '@/components/submit-button'
 import { ImportarDirpf } from '@/components/importar-dirpf'
+
+const LABEL_TIPO_ATV: Record<string, string> = {
+  ligacao: 'Ligação', email: 'E-mail', whatsapp: 'WhatsApp', reuniao: 'Reunião',
+  proposta: 'Proposta', followup: 'Follow-up', outro: 'Outro',
+}
 
 const FLUXO: Record<string, string[]> = {
   novo: ['abordado', 'descartado'],
@@ -35,6 +40,12 @@ export default async function RadarClientePage({
   const supabase = createClient()
   const { data: c } = await supabase.from('radar_clientes').select('*').eq('id', params.id).single()
   if (!c) notFound()
+
+  const { data: atvData } = await supabase
+    .from('radar_atividades').select('id, tipo, descricao, vence_em, concluida_em').eq('radar_id', params.id)
+  const hojeISO = new Date().toISOString().slice(0, 10)
+  const abertas = (atvData ?? []).filter((a) => !a.concluida_em).sort((x, y) => (x.vence_em ?? '').localeCompare(y.vence_em ?? ''))
+  const concluidas = (atvData ?? []).filter((a) => a.concluida_em)
 
   const score = calcularScore(c)
   const classe = classificar(score)
@@ -204,6 +215,67 @@ export default async function RadarClientePage({
       <div className="mt-8"><SectionTitle>Importar da DIRPF</SectionTitle></div>
       <div className="mt-3">
         <ImportarDirpf radarId={c.id} action={updateRadarSinais} />
+      </div>
+
+      <div className="mt-8">
+        <SectionTitle>Atividades — controle de vendas</SectionTitle>
+        <Card className="mt-3 p-5">
+          <form className="grid gap-3 sm:grid-cols-[9rem_1fr_9rem_auto] sm:items-end">
+            <input type="hidden" name="radar_id" value={c.id} />
+            <div>
+              <Label htmlFor="atv-tipo">Tipo</Label>
+              <select id="atv-tipo" name="tipo" className={fieldClass} defaultValue="followup">
+                <option value="ligacao">Ligação</option>
+                <option value="email">E-mail</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="reuniao">Reunião</option>
+                <option value="proposta">Proposta</option>
+                <option value="followup">Follow-up</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="atv-desc">O que fazer</Label>
+              <input id="atv-desc" name="descricao" placeholder="Ex.: ligar para agendar o diagnóstico" className={fieldClass} />
+            </div>
+            <div>
+              <Label htmlFor="atv-venc">Vence em</Label>
+              <input id="atv-venc" name="vence_em" type="date" defaultValue={hojeISO} className={fieldClass} />
+            </div>
+            <SubmitButton action={criarAtividadeRadar}>Adicionar</SubmitButton>
+          </form>
+
+          {abertas.length === 0 && concluidas.length === 0 ? (
+            <p className="mt-4 text-sm text-ink-soft">Nenhuma atividade. Adicione a próxima ação — ou mova o estágio e o sistema sugere uma.</p>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {abertas.map((a) => {
+                const atrasada = a.vence_em ? a.vence_em < hojeISO : false
+                return (
+                  <div key={a.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+                    <Pill>{LABEL_TIPO_ATV[a.tipo] ?? a.tipo}</Pill>
+                    <span className="flex-1 text-ink">{a.descricao ?? '—'}</span>
+                    {a.vence_em && (
+                      <span className={`text-xs font-medium ${atrasada ? 'text-red-600' : a.vence_em === hojeISO ? 'text-amber-700' : 'text-ink-soft'}`}>
+                        {atrasada ? 'atrasada · ' : a.vence_em === hojeISO ? 'hoje · ' : ''}vence {a.vence_em.split('-').reverse().join('/')}
+                      </span>
+                    )}
+                    <form><input type="hidden" name="radar_id" value={c.id} /><input type="hidden" name="id" value={a.id} /><PendingButton action={concluirAtividadeRadar} className="rounded-md bg-navy px-2 py-1 text-[11px] font-semibold text-white hover:bg-navy-soft">concluir</PendingButton></form>
+                    <form><input type="hidden" name="radar_id" value={c.id} /><input type="hidden" name="id" value={a.id} /><PendingButton action={excluirAtividadeRadar} className="text-[11px] text-ink-soft hover:text-red-600">excluir</PendingButton></form>
+                  </div>
+                )
+              })}
+              {concluidas.map((a) => (
+                <div key={a.id} className="flex flex-wrap items-center gap-2 px-3 py-1.5 text-sm text-ink-soft">
+                  <span className="text-emerald-600">✓</span>
+                  <span className="text-[11px] uppercase tracking-wide">{LABEL_TIPO_ATV[a.tipo] ?? a.tipo}</span>
+                  <span className="flex-1 line-through">{a.descricao ?? '—'}</span>
+                  <form><input type="hidden" name="radar_id" value={c.id} /><input type="hidden" name="id" value={a.id} /><PendingButton action={reabrirAtividadeRadar} className="text-[11px] hover:text-navy">reabrir</PendingButton></form>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
 
       <p className="mt-6 text-xs text-ink-soft">

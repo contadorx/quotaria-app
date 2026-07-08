@@ -66,7 +66,7 @@ export async function faroisDaFamilia(
 // na carteira inteira, ordenada por urgência. É o "hoje" do escritório.
 export type ItemAgenda = {
   id: string
-  tipo: 'calendario' | 'doacao' | 'distribuicao' | 'conformidade' | 'fechamento'
+  tipo: 'calendario' | 'doacao' | 'distribuicao' | 'conformidade' | 'fechamento' | 'radar'
   label: string
   familia: string
   holding?: string
@@ -170,6 +170,23 @@ export async function agendaDoEscritorio(supabase: SupabaseClient): Promise<Item
         ordem: 'zzy',
       })
     }
+  }
+
+  // Atividades de venda do Radar vencidas ou para hoje (pipeline ativo)
+  const hojeAtv = new Date().toISOString().slice(0, 10)
+  const { data: atvRadar } = await supabase
+    .from('radar_atividades').select('id, vence_em').is('concluida_em', null).lte('vence_em', hojeAtv)
+  const nAtvRadar = (atvRadar ?? []).length
+  if (nAtvRadar > 0) {
+    itens.push({
+      id: 'radar-atv',
+      tipo: 'radar',
+      estado: 'alerta',
+      label: nAtvRadar === 1 ? '1 atividade de venda para tratar' : `${nAtvRadar} atividades de venda para tratar`,
+      familia: 'Prospecção (Radar)',
+      href: '/app/radar',
+      ordem: 'aab',
+    })
   }
 
   const peso = (e: EstadoFarol) => (e === 'alerta' ? 0 : 1)

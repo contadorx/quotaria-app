@@ -27,6 +27,18 @@ export default async function RadarPage({
 
   const ativos = lista.filter((c) => c.status !== 'descartado')
   const quentes = ativos.filter((c) => c.quente).length
+
+  // pipeline ativo: atividades abertas do escritório (atrasadas / hoje / por lead)
+  const { data: atvAbertas } = await supabase
+    .from('radar_atividades').select('radar_id, vence_em').is('concluida_em', null)
+  const hojeISO = new Date().toISOString().slice(0, 10)
+  const atrasadas = (atvAbertas ?? []).filter((a) => a.vence_em && a.vence_em < hojeISO).length
+  const paraHoje = (atvAbertas ?? []).filter((a) => a.vence_em === hojeISO).length
+  const atvPorLead = new Map<string, boolean>() // radar_id -> tem atrasada
+  for (const a of atvAbertas ?? []) {
+    const atrasada = !!a.vence_em && a.vence_em < hojeISO
+    atvPorLead.set(a.radar_id, (atvPorLead.get(a.radar_id) ?? false) || atrasada)
+  }
   const potencial = ativos
     .filter((c) => !['fechado'].includes(c.status))
     .reduce((acc, c) => acc + potencialMensal(c.classe), 0)
@@ -55,6 +67,15 @@ export default async function RadarPage({
           <Resumo rotulo="No pipeline" valor={String(ativos.length)} />
           <Resumo rotulo="Leads quentes da Reforma" valor={String(quentes)} destaque={quentes > 0} />
           <Resumo rotulo="Potencial de honorários" valor={`${formatarMoeda(potencial)}/mês`} />
+        </div>
+      )}
+
+      {(atrasadas > 0 || paraHoje > 0) && (
+        <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl2 border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          <span className="font-semibold">Controle de vendas:</span>
+          {atrasadas > 0 && <span>⚠ {atrasadas} atividade{atrasadas === 1 ? '' : 's'} atrasada{atrasadas === 1 ? '' : 's'}</span>}
+          {paraHoje > 0 && <span>📌 {paraHoje} para hoje</span>}
+          <span className="text-xs text-amber-700">abra o lead para tratar</span>
         </div>
       )}
 
@@ -117,6 +138,11 @@ export default async function RadarPage({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 font-semibold text-ink">
                           {c.nome}
+                          {atvPorLead.get(c.id) && (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                              ⚠ atividade atrasada
+                            </span>
+                          )}
                           {c.quente && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
                               <Flame size={11} /> lead quente da Reforma
