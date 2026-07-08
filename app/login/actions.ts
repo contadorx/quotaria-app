@@ -22,6 +22,7 @@ export async function signup(formData: FormData) {
   const email = String(formData.get('email') ?? '')
   const password = String(formData.get('password') ?? '')
   const nomeEscritorio = String(formData.get('nome_escritorio') ?? '').trim()
+  const ref = String(formData.get('ref') ?? '').trim() || null
 
   if (!nomeEscritorio) {
     redirect('/login?error=' + encodeURIComponent('Informe o nome do escritório para criar a conta.'))
@@ -37,6 +38,7 @@ export async function signup(formData: FormData) {
       p_nome: nomeEscritorio,
       p_cnpj: null,
       p_crc: null,
+      p_ref: ref,
     })
     revalidatePath('/', 'layout')
     // se algo falhar na criação do escritório, cai no onboarding (fallback) já logado

@@ -6,8 +6,9 @@ import { PendingButton } from '@/components/submit-button'
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string; message?: string }
+  searchParams: { error?: string; message?: string; ref?: string }
 }) {
+  const ref = (searchParams?.ref ?? '').trim()
   return (
     <main className="flex min-h-[100dvh] items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
@@ -21,6 +22,7 @@ export default function LoginPage({
 
         <div className="rounded-xl2 border border-line bg-white p-6 shadow-card">
           <form className="space-y-4">
+            {ref && <input type="hidden" name="ref" value={ref} />}
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-ink-muted">E-mail</label>
               <input id="email" name="email" type="email" required autoComplete="email" className={fieldClass} />
