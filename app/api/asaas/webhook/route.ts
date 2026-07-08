@@ -20,6 +20,8 @@ type Payload = {
     subscription?: string
     dueDate?: string
     value?: number
+    invoiceUrl?: string
+    bankSlipUrl?: string
   }
 }
 
@@ -68,6 +70,22 @@ export async function POST(req: Request) {
   }
   if (!org) return NextResponse.json({ ok: true, ignorado: true, motivo: 'org não localizada' })
 
+  if (evento === 'PAYMENT_CREATED' || evento === 'PAYMENT_UPDATED') {
+    // Asaas gerou/atualizou a fatura: guardamos na org para o aviso no app,
+    // o botão "pagar" das réguas e a central de faturas. Não mexe no status
+    // (uma assinatura ativa continua ativa até vencer/pagar).
+    const { error } = await admin
+      .from('organizations')
+      .update({
+        fatura_url: pg.invoiceUrl ?? pg.bankSlipUrl ?? null,
+        fatura_valor: pg.value ?? null,
+        fatura_vencimento: pg.dueDate ?? null,
+      })
+      .eq('id', org.id)
+    if (error) return NextResponse.json({ erro: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, acao: 'fatura_guardada' })
+  }
+
   if (evento === 'PAYMENT_CONFIRMED' || evento === 'PAYMENT_RECEIVED') {
     const base = pg.dueDate || new Date().toISOString().slice(0, 10)
     const prox = proximoVencimento(base, (org.ciclo_cobranca as Ciclo) || 'mensal')
@@ -77,6 +95,9 @@ export async function POST(req: Request) {
         assinatura_status: 'ativa',
         proximo_vencimento: prox,
         ativada_em: org.ativada_em ?? new Date().toISOString(),
+        fatura_url: null,
+        fatura_valor: null,
+        fatura_vencimento: null,
       })
       .eq('id', org.id)
     if (error) return NextResponse.json({ erro: error.message }, { status: 500 })

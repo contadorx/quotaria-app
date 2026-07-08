@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/app-shell'
 import { avaliarAcesso, type AcessoOrg } from '@/lib/acesso'
+import { formatarMoeda, formatarData } from '@/lib/format'
 import { AcessoBloqueado } from '@/components/acesso-bloqueado'
 import { AcessoBanner } from '@/components/acesso-banner'
 import type { PlanoId } from '@/lib/planos'
@@ -31,7 +32,7 @@ export default async function AppLayout({
 
   const { data: org } = await supabase
     .from('organizations')
-    .select('nome, assinatura_status, is_teste, trial_ate, bonus_ate, proximo_vencimento, plano, ciclo_cobranca, asaas_subscription_id')
+    .select('nome, assinatura_status, is_teste, trial_ate, bonus_ate, proximo_vencimento, plano, ciclo_cobranca, asaas_subscription_id, fatura_url, fatura_valor, fatura_vencimento')
     .eq('id', orgId)
     .single()
 
@@ -78,6 +79,13 @@ export default async function AppLayout({
     <AppShell {...shellProps}>
       {acesso.estado === 'aviso' && acesso.titulo && (
         <AcessoBanner titulo={acesso.titulo} mensagem={acesso.mensagem ?? ''} cta={acesso.cta} />
+      )}
+      {acesso.estado === 'ok' && membro?.super_admin !== true && org?.fatura_url && (
+        <AcessoBanner
+          titulo="Você tem uma fatura em aberto"
+          mensagem={`Fatura de ${formatarMoeda(Number(org.fatura_valor ?? 0))}${org.fatura_vencimento ? ` com vencimento em ${formatarData(org.fatura_vencimento)}` : ''}. Pague para manter tudo em dia.`}
+          cta="fatura"
+        />
       )}
       {children}
     </AppShell>

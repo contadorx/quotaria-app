@@ -916,6 +916,9 @@ export interface Database {
           proximo_vencimento: string | null
           asaas_customer_id: string | null
           asaas_subscription_id: string | null
+          fatura_url: string | null
+          fatura_valor: number | null
+          fatura_vencimento: string | null
           is_teste: boolean
           parceiro_ref: string | null
           obs_admin: string | null
@@ -945,6 +948,9 @@ export interface Database {
           proximo_vencimento?: string | null
           asaas_customer_id?: string | null
           asaas_subscription_id?: string | null
+          fatura_url?: string | null
+          fatura_valor?: number | null
+          fatura_vencimento?: string | null
           is_teste?: boolean
           parceiro_ref?: string | null
           obs_admin?: string | null
@@ -974,6 +980,9 @@ export interface Database {
           proximo_vencimento?: string | null
           asaas_customer_id?: string | null
           asaas_subscription_id?: string | null
+          fatura_url?: string | null
+          fatura_valor?: number | null
+          fatura_vencimento?: string | null
           is_teste?: boolean
           parceiro_ref?: string | null
           obs_admin?: string | null

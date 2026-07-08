@@ -70,7 +70,7 @@ export async function GET(req: Request) {
       .eq('ativo', true)
     const { data: orgs } = await admin
       .from('organizations')
-      .select('id, nome, valor_mensal, proximo_vencimento, assinatura_status')
+      .select('id, nome, valor_mensal, proximo_vencimento, assinatura_status, fatura_url')
       .in('assinatura_status', ['ativa', 'inadimplente'])
       .eq('is_teste', false)
       .not('proximo_vencimento', 'is', null)
@@ -99,7 +99,7 @@ export async function GET(req: Request) {
           para,
           assunto: preencher(p.assunto, vars),
           corpoTexto: preencher(p.corpo, vars),
-          botao: { texto: p.botao_texto, url: `${appUrl}/app` },
+          botao: { texto: p.botao_texto, url: o.fatura_url ?? `${appUrl}/app/configuracoes/assinatura` },
         })
         if (r.ok) resumo.cobranca++
         else {
