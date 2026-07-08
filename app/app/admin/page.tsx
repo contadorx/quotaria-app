@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Lock, BellRing, MessageSquare, LifeBuoy, BookOpen, Bot, MessageSquareText, HandCoins } from 'lucide-react'
+import { Lock, BellRing, MessageSquare, LifeBuoy, BookOpen, Bot, MessageSquareText, HandCoins, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Card, PageHeader } from '@/components/ui'
 import { ContasAdmin, type ContaAdmin } from '@/components/admin/contas-admin'
@@ -122,6 +122,12 @@ export default async function AdminPage({
               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
             >
               <HandCoins size={15} /> Comissões
+            </Link>
+            <Link
+              href="/app/admin/parceiros"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
+            >
+              <Users size={15} /> Parceiros
             </Link>
           </div>
         }

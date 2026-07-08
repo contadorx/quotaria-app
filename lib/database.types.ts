@@ -803,6 +803,18 @@ export interface Database {
         }
         Relationships: []
       }
+      parceiros: {
+        Row: { id: string; ref: string; nome: string; email: string | null; documento: string | null; chave_pix: string | null; ativo: boolean; observacoes: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; ref: string; nome: string; email?: string | null; documento?: string | null; chave_pix?: string | null; ativo?: boolean; observacoes?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; ref?: string; nome?: string; email?: string | null; documento?: string | null; chave_pix?: string | null; ativo?: boolean; observacoes?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      comissao_faturas: {
+        Row: { id: string; parceiro_ref: string; competencia: string; valor: number; status: string; nf_numero: string | null; nf_link: string | null; solicitada_em: string | null; recebida_em: string | null; paga_em: string | null; observacoes: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; parceiro_ref: string; competencia: string; valor?: number; status?: string; nf_numero?: string | null; nf_link?: string | null; solicitada_em?: string | null; recebida_em?: string | null; paga_em?: string | null; observacoes?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; parceiro_ref?: string; competencia?: string; valor?: number; status?: string; nf_numero?: string | null; nf_link?: string | null; solicitada_em?: string | null; recebida_em?: string | null; paga_em?: string | null; observacoes?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       radar_clientes: {
         Row: {
           id: string
