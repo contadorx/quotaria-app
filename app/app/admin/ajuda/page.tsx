@@ -15,6 +15,7 @@ type Faq = {
   destaque: boolean
   publicado: boolean
   ordem: number
+  video_url?: string | null
 }
 
 function FormFaq({ item }: { item?: Faq }) {
@@ -39,6 +40,10 @@ function FormFaq({ item }: { item?: Faq }) {
       <div>
         <Label htmlFor={`res-${uid}`}>Resposta</Label>
         <textarea id={`res-${uid}`} name="resposta" rows={5} defaultValue={item?.resposta ?? ''} className={fieldClass} />
+      </div>
+      <div>
+        <Label htmlFor={`vid-${uid}`}>Vídeo (YouTube/Vimeo — opcional)</Label>
+        <input id={`vid-${uid}`} name="video_url" type="url" placeholder="https://youtu.be/…" defaultValue={item?.video_url ?? ''} className={fieldClass} />
       </div>
       <div className="flex items-center gap-5">
         <label className="flex items-center gap-2 text-sm text-ink">
@@ -79,7 +84,7 @@ export default async function AdminAjudaPage({
 
   const { data: faq } = await supabase
     .from('faq')
-    .select('id, categoria, pergunta, resposta, destaque, publicado, ordem')
+    .select('id, categoria, pergunta, resposta, destaque, publicado, ordem, video_url')
     .order('categoria', { ascending: true })
     .order('ordem', { ascending: true })
 

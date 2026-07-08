@@ -29,6 +29,11 @@ export default function LoginPage({
               <label htmlFor="password" className="block text-xs font-medium text-ink-muted">Senha</label>
               <input id="password" name="password" type="password" required minLength={6} autoComplete="current-password" className={fieldClass} />
             </div>
+            <div>
+              <label htmlFor="nome_escritorio" className="block text-xs font-medium text-ink-muted">Nome do escritório</label>
+              <input id="nome_escritorio" name="nome_escritorio" placeholder="Ex.: Oliveira Contabilidade" autoComplete="organization" className={fieldClass} />
+              <p className="mt-1 text-[11px] text-ink-soft">Preencha para criar uma conta nova. Ao entrar, pode deixar em branco.</p>
+            </div>
 
             {searchParams?.error && <p className="text-sm font-medium text-red-600">{searchParams.error}</p>}
             {searchParams?.message && <p className="text-sm font-medium text-emerald-600">{searchParams.message}</p>}

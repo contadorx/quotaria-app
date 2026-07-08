@@ -703,6 +703,33 @@ export async function fecharMesEmLote(formData: FormData) {
   redirect(`/app/mes?ano=${ano}&mes=${mes}`)
 }
 
+// -------------------------- Portal da família (acesso do cliente) --------------------------
+export async function convidarFamilia(formData: FormData) {
+  const familyId = s(formData, 'family_id')
+  const email = s(formData, 'email').trim().toLowerCase()
+  if (!familyId) redirect('/app')
+  if (!email || !email.includes('@')) {
+    redirect(`/app/familias/${familyId}?error=` + encodeURIComponent('Informe um e-mail válido para o convite.'))
+  }
+  const supabase = createClient()
+  const { error } = await supabase.from('family_access').insert({ family_id: familyId, email })
+  if (error) {
+    const msg = error.message.includes('duplicate') ? 'Já existe um convite para esse e-mail nesta família.' : error.message
+    redirect(`/app/familias/${familyId}?error=` + encodeURIComponent(msg))
+  }
+  revalidatePath(`/app/familias/${familyId}`)
+  redirect(`/app/familias/${familyId}?message=` + encodeURIComponent('Convite criado. Copie o link e envie para a família.'))
+}
+
+export async function revogarAcessoFamilia(formData: FormData) {
+  const familyId = s(formData, 'family_id')
+  const id = s(formData, 'id')
+  const supabase = createClient()
+  await supabase.from('family_access').delete().eq('id', id)
+  revalidatePath(`/app/familias/${familyId}`)
+  redirect(`/app/familias/${familyId}?message=` + encodeURIComponent('Acesso revogado.'))
+}
+
 // -------------------------- Edições (entidades-filhas) --------------------------
 export async function updateSocio(formData: FormData) {
   const id = s(formData, 'id')
@@ -821,6 +848,7 @@ export async function updateOrganization(formData: FormData) {
   const supabase = createClient()
   const { error } = await supabase.from('organizations').update({
     nome,
+    perfil: s(formData, 'perfil') === 'juridico' ? 'juridico' : 'contabil',
     cnpj: orNull(s(formData, 'cnpj')),
     crc: orNull(s(formData, 'crc')),
     email_contato: orNull(s(formData, 'email_contato')),

@@ -41,6 +41,7 @@ export async function salvarFaq(formData: FormData) {
     p_destaque: formData.get('destaque') === 'on',
     p_publicado: formData.get('publicado') === 'on',
     p_ordem: Number.isFinite(ordem) ? Math.round(ordem) : 0,
+    p_video_url: s(formData, 'video_url') || null,
   })
   if (error) redirect('/app/admin/ajuda?error=' + encodeURIComponent(error.message))
   revalidatePath('/app/admin/ajuda')

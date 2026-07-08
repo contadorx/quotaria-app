@@ -4,6 +4,7 @@ import { ArrowLeft, FileSignature, ScrollText, Scale } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader, Card } from '@/components/ui'
 import { MINUTAS_INFO } from '@/lib/minutas'
+import { molde, perfilValido } from '@/lib/perfil'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,8 +19,9 @@ export default async function MinutasPage({ params }: { params: { id: string } }
   if (!holding) notFound()
 
   const { data: org } = await supabase
-    .from('organizations').select('assinatura_provedor').eq('id', holding.organization_id).maybeSingle()
+    .from('organizations').select('assinatura_provedor, perfil').eq('id', holding.organization_id).maybeSingle()
   const zapAtivo = org?.assinatura_provedor === 'zapsign'
+  const m = molde(perfilValido(org?.perfil))
 
   return (
     <div>
@@ -52,11 +54,9 @@ export default async function MinutasPage({ params }: { params: { id: string } }
       <Card className="mt-4 flex items-start gap-3 border-l-4 border-l-gold p-4">
         <Scale size={18} className="mt-0.5 shrink-0 text-gold-deep" />
         <div>
-          <p className="text-sm font-semibold text-ink">Doações, cláusulas e alterações contratuais são do advogado</p>
+          <p className="text-sm font-semibold text-ink">{m.fronteiraTitulo}</p>
           <p className="mt-0.5 text-sm text-ink-muted">
-            O Quotaria gera as atas de registro societário (aprovação de contas e deliberação de distribuição).
-            Instrumentos de doação, cláusulas de proteção, acordos de quotistas e alterações do contrato social
-            são redigidos e interpretados pelo advogado parceiro — o app organiza e encaminha, não redige.
+            {m.fronteiraTexto}
           </p>
         </div>
       </Card>

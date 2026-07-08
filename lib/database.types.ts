@@ -728,6 +728,42 @@ export interface Database {
         }
         Relationships: []
       }
+      family_access: {
+        Row: {
+          id: string
+          organization_id: string
+          family_id: string
+          user_id: string | null
+          email: string
+          convite_token: string | null
+          aceito_em: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string
+          family_id: string
+          user_id?: string | null
+          email: string
+          convite_token?: string | null
+          aceito_em?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          family_id?: string
+          user_id?: string | null
+          email?: string
+          convite_token?: string | null
+          aceito_em?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       radar_clientes: {
         Row: {
           id: string
@@ -829,6 +865,7 @@ export interface Database {
           ativada_em: string | null
           assinatura_provedor: string
           assinatura_token: string | null
+          perfil: string
           created_at: string
           updated_at: string
         }
@@ -857,6 +894,7 @@ export interface Database {
           ativada_em?: string | null
           assinatura_provedor?: string
           assinatura_token?: string | null
+          perfil?: string
           created_at?: string
           updated_at?: string
         }
@@ -885,6 +923,7 @@ export interface Database {
           ativada_em?: string | null
           assinatura_provedor?: string
           assinatura_token?: string | null
+          perfil?: string
           created_at?: string
           updated_at?: string
         }
@@ -1016,6 +1055,7 @@ export interface Database {
           categoria: string
           pergunta: string
           resposta: string
+          video_url: string | null
           destaque: boolean
           publicado: boolean
           ordem: number
@@ -1036,6 +1076,7 @@ export interface Database {
           categoria?: string
           pergunta?: string
           resposta?: string
+          video_url?: string | null
           destaque?: boolean
           publicado?: boolean
           ordem?: number
@@ -1247,6 +1288,10 @@ export interface Database {
         Args: { p_nome: string; p_cnpj?: string | null; p_crc?: string | null }
         Returns: string
       }
+      aceitar_convite_familia: {
+        Args: { p_token: string }
+        Returns: string
+      }
       ver_convite: {
         Args: { p_token: string }
         Returns: { organizacao: string; email: string; papel: string; invalido: boolean }[]
@@ -1341,6 +1386,7 @@ export interface Database {
           p_destaque: boolean
           p_publicado: boolean
           p_ordem: number
+          p_video_url?: string | null
         }
         Returns: undefined
       }

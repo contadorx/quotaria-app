@@ -2,8 +2,28 @@ import { MessageSquareText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Card, EmptyState, PageHeader, Pill, SectionTitle, SubmitButton, fieldClass, Label } from '@/components/ui'
 import { EditDialog } from '@/components/edit-dialog'
-import { ChatSuporte } from '@/components/ajuda/chat-suporte'
 import { enviarFeedback } from '@/app/app/ajuda/actions'
+
+// Converte um link de YouTube/Vimeo em URL de embed. Retorna null se não reconhecer.
+function embedUrl(url: string | null): string | null {
+  if (!url) return null
+  try {
+    const u = new URL(url)
+    if (u.hostname.includes('youtube.com')) {
+      const id = u.searchParams.get('v')
+      if (id) return `https://www.youtube.com/embed/${id}`
+      if (u.pathname.startsWith('/embed/')) return url
+    }
+    if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed/${u.pathname.slice(1)}`
+    if (u.hostname.includes('vimeo.com')) {
+      const id = u.pathname.split('/').filter(Boolean).pop()
+      if (id && /^\d+$/.test(id)) return `https://player.vimeo.com/video/${id}`
+    }
+  } catch {
+    return null
+  }
+  return null
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -27,9 +47,11 @@ export default async function AjudaPage({
 
   const { data: faq } = await supabase
     .from('faq')
-    .select('id, categoria, pergunta, resposta, destaque')
+    .select('id, categoria, pergunta, resposta, destaque, video_url')
     .eq('publicado', true)
     .order('ordem', { ascending: true })
+
+  const videos = (faq ?? []).filter((f) => f.video_url)
 
   const { data: chamados } = await supabase
     .from('suporte_conversas')
@@ -76,6 +98,28 @@ export default async function AjudaPage({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_380px]">
         <div className="space-y-4">
           <SectionTitle>Perguntas frequentes</SectionTitle>
+          {videos.length > 0 && (
+            <Card className="p-5">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gold-deep">Tutoriais em vídeo</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {videos.map((v) => {
+                  const emb = embedUrl(v.video_url as string)
+                  return (
+                    <div key={v.id}>
+                      <p className="mb-1.5 text-sm font-semibold text-ink">{v.pergunta}</p>
+                      {emb ? (
+                        <div className="aspect-video overflow-hidden rounded-lg border border-line">
+                          <iframe src={emb} title={v.pergunta} allowFullScreen className="h-full w-full" loading="lazy" />
+                        </div>
+                      ) : (
+                        <a href={v.video_url as string} target="_blank" rel="noreferrer" className="text-sm text-navy underline">Abrir vídeo</a>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )}
           {(faq ?? []).length === 0 ? (
             <EmptyState>A base de perguntas ainda está sendo montada.</EmptyState>
           ) : (
@@ -92,6 +136,11 @@ export default async function AjudaPage({
                           <span className="text-ink-soft transition group-open:rotate-90">›</span>
                         </summary>
                         <p className="mt-2 whitespace-pre-wrap text-sm text-ink-muted">{f.resposta}</p>
+                        {f.video_url && embedUrl(f.video_url) && (
+                          <div className="mt-3 aspect-video max-w-md overflow-hidden rounded-lg border border-line">
+                            <iframe src={embedUrl(f.video_url) as string} title={f.pergunta} allowFullScreen className="h-full w-full" loading="lazy" />
+                          </div>
+                        )}
                       </details>
                     ))}
                 </div>
@@ -131,7 +180,17 @@ export default async function AjudaPage({
 
         <div className="space-y-4">
           <SectionTitle>Fale com o assistente</SectionTitle>
-          <ChatSuporte />
+          <Card className="p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-white"><MessageSquareText size={18} /></span>
+              <div>
+                <p className="text-sm font-semibold text-ink">O assistente fica sempre à mão</p>
+                <p className="mt-0.5 text-sm text-ink-muted">
+                  Toque no botão <strong>Ajuda</strong> no canto inferior direito, em qualquer tela, para tirar dúvidas de uso na hora.
+                </p>
+              </div>
+            </div>
+          </Card>
           <Card className="flex items-center justify-between gap-3 p-4">
             <div>
               <p className="text-sm font-semibold text-ink">Tem uma sugestão?</p>

@@ -21,20 +21,32 @@ export async function signup(formData: FormData) {
   const supabase = createClient()
   const email = String(formData.get('email') ?? '')
   const password = String(formData.get('password') ?? '')
+  const nomeEscritorio = String(formData.get('nome_escritorio') ?? '').trim()
+
+  if (!nomeEscritorio) {
+    redirect('/login?error=' + encodeURIComponent('Informe o nome do escritório para criar a conta.'))
+  }
 
   const { data, error } = await supabase.auth.signUp({ email, password })
   if (error) {
     redirect('/login?error=' + encodeURIComponent(error.message))
   }
   if (data.session) {
-    // confirmação de e-mail desligada: já entra e configura o escritório
+    // confirmação de e-mail desligada: já entra, cria o escritório e vai pro app
+    const { error: eOrg } = await supabase.rpc('criar_escritorio', {
+      p_nome: nomeEscritorio,
+      p_cnpj: null,
+      p_crc: null,
+    })
     revalidatePath('/', 'layout')
-    redirect('/onboarding')
+    // se algo falhar na criação do escritório, cai no onboarding (fallback) já logado
+    if (eOrg) redirect('/onboarding?error=' + encodeURIComponent(eOrg.message))
+    redirect('/app')
   }
   redirect(
     '/login?message=' +
       encodeURIComponent(
-        'Conta criada. Confirme pelo link enviado ao seu e-mail e entre — a configuração do escritório vem em seguida.',
+        'Conta criada. Confirme pelo link enviado ao seu e-mail e entre — o escritório será criado em seguida.',
       ),
   )
 }

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { updateOrganization, updateAssinaturaProvedor } from '../actions'
+import { molde, perfilValido } from '@/lib/perfil'
 import { PageHeader, Card, Label, SubmitButton, fieldClass } from '@/components/ui'
 
 export default async function ConfiguracoesPage({
@@ -14,12 +15,13 @@ export default async function ConfiguracoesPage({
 
   const { data: org } = await supabase
     .from('organizations')
-    .select('id, nome, cnpj, crc, email_contato, telefone, logo_url, cor_primaria, assinatura_provedor, assinatura_token')
+    .select('id, nome, cnpj, crc, email_contato, telefone, logo_url, cor_primaria, assinatura_provedor, assinatura_token, perfil')
     .eq('id', orgId)
     .single()
   if (!org) redirect('/onboarding')
 
   const { data: souAdmin } = await supabase.rpc('is_org_admin')
+  const m = molde(perfilValido(org.perfil))
 
   return (
     <div>
@@ -45,6 +47,16 @@ export default async function ConfiguracoesPage({
         <form className="grid gap-4 sm:grid-cols-2">
           <input type="hidden" name="id" value={org.id} />
           <div className="sm:col-span-2">
+            <Label htmlFor="perfil">Tipo de escritório</Label>
+            <select id="perfil" name="perfil" defaultValue={org.perfil ?? 'contabil'} disabled={!souAdmin} className={fieldClass}>
+              <option value="contabil">Contabilidade</option>
+              <option value="juridico">Advocacia</option>
+            </select>
+            <p className="mt-1 text-[11px] text-ink-soft">
+              Muda a moldura do sistema: a fronteira entre o que você faz e o que o parceiro faz, e os rótulos (CRC/OAB). O núcleo é o mesmo.
+            </p>
+          </div>
+          <div className="sm:col-span-2">
             <Label htmlFor="nome">Nome do escritório *</Label>
             <input id="nome" name="nome" required defaultValue={org.nome} className={fieldClass} />
           </div>
@@ -53,8 +65,8 @@ export default async function ConfiguracoesPage({
             <input id="cnpj" name="cnpj" defaultValue={org.cnpj ?? ''} className={fieldClass} />
           </div>
           <div>
-            <Label htmlFor="crc">CRC</Label>
-            <input id="crc" name="crc" defaultValue={org.crc ?? ''} className={fieldClass} />
+            <Label htmlFor="crc">{m.registro}</Label>
+            <input id="crc" name="crc" placeholder={m.registroPlaceholder} defaultValue={org.crc ?? ''} className={fieldClass} />
           </div>
           <div>
             <Label htmlFor="email_contato">E-mail de contato</Label>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sidebar, MobileHeader } from '@/components/sidebar'
 import { BuscaGlobal } from '@/components/busca-global'
+import { SuporteFlutuante } from '@/components/suporte-flutuante'
 
 export function AppShell({
   email,
@@ -42,6 +43,7 @@ export function AppShell({
           {children}
         </main>
       </div>
+      <SuporteFlutuante />
     </div>
   )
 }

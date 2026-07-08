@@ -13,7 +13,9 @@ import {
   LABEL_ESTADO_CIVIL,
   LABEL_REGIME_BENS,
 } from '@/lib/format'
-import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato } from '../../actions'
+import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato, convidarFamilia, revogarAcessoFamilia } from '../../actions'
+import { headers } from 'next/headers'
+import { CopyButton } from '@/components/copy-button'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
 import { EditDialog } from '@/components/edit-dialog'
@@ -23,7 +25,7 @@ export default async function FamilyDetail({
   searchParams,
 }: {
   params: { id: string }
-  searchParams: { error?: string }
+  searchParams: { error?: string; message?: string }
 }) {
   const supabase = createClient()
 
@@ -40,6 +42,14 @@ export default async function FamilyDetail({
     .select('id, nome, email, parentesco')
     .eq('family_id', params.id)
     .order('nome')
+
+  const { data: acessos } = await supabase
+    .from('family_access')
+    .select('id, email, aceito_em, convite_token, created_at')
+    .eq('family_id', params.id)
+    .order('created_at')
+  const h = headers()
+  const base = `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('host')}`
 
   const { data: holdings } = await supabase
     .from('holdings').select('id, razao_social, cnpj, tipo_societario, status, created_at')
@@ -256,6 +266,51 @@ export default async function FamilyDetail({
                 <DeleteButton action={deleteContato} id={c.id} label={`o contato ${c.nome}`} extra={{ family_id: family.id }} />
               </div>
             ))}
+          </ListCard>
+        )}
+      </div>
+
+      {/* ACESSO DA FAMÍLIA (PORTAL) */}
+      <div className="mt-10"><SectionTitle>Acesso da família (portal)</SectionTitle></div>
+      <p className="mt-1 text-sm text-ink-muted">
+        Convide um membro da família para acompanhar, em modo leitura, só a estrutura desta família — o que foi feito,
+        a sucessão em andamento e o cofre. Ele nunca vê outras famílias, nem o seu radar ou financeiro.
+      </p>
+      <Card className="mt-3 p-5">
+        <form className="flex flex-wrap items-end gap-3">
+          <input type="hidden" name="family_id" value={family.id} />
+          <div className="grow">
+            <Label htmlFor="acesso_email">E-mail do membro da família</Label>
+            <input id="acesso_email" name="email" type="email" placeholder="familiar@exemplo.com" className={fieldClass} />
+          </div>
+          <SubmitButton action={convidarFamilia}>Criar convite</SubmitButton>
+        </form>
+        {searchParams?.message && <p className="mt-3 text-sm font-medium text-emerald-600">{searchParams.message}</p>}
+        {searchParams?.error && <p className="mt-3 text-sm font-medium text-red-600">{searchParams.error}</p>}
+      </Card>
+      <div className="mt-3">
+        {!acessos || acessos.length === 0 ? (
+          <EmptyState>Nenhum acesso criado. A família acompanha pelo portal quando você convida.</EmptyState>
+        ) : (
+          <ListCard>
+            {acessos.map((a) => {
+              const link = `${base}/portal/convite/${a.convite_token}`
+              return (
+                <div key={a.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+                  <span className="min-w-[10rem] flex-1 font-medium text-ink">{a.email}</span>
+                  {a.aceito_em ? (
+                    <Pill>ativo</Pill>
+                  ) : (
+                    <>
+                      <span className="rounded-md bg-cream px-2 py-0.5 text-[11px] font-medium text-navy">convite pendente</span>
+                      <span className="max-w-[18rem] truncate text-xs text-ink-soft" title={link}>{link}</span>
+                      <CopyButton text={link} />
+                    </>
+                  )}
+                  <DeleteButton action={revogarAcessoFamilia} id={a.id} label={`o acesso de ${a.email}`} extra={{ family_id: family.id }} />
+                </div>
+              )
+            })}
           </ListCard>
         )}
       </div>

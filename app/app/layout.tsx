@@ -20,7 +20,11 @@ export default async function AppLayout({
   if (!user) redirect('/login')
 
   const { data: orgId } = await supabase.rpc('current_org')
-  if (!orgId) redirect('/onboarding')
+  if (!orgId) {
+    const { data: acesso } = await supabase
+      .from('family_access').select('id').not('aceito_em', 'is', null).limit(1).maybeSingle()
+    redirect(acesso ? '/portal' : '/onboarding')
+  }
 
   const { data: org } = await supabase
     .from('organizations')
