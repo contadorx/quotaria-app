@@ -764,6 +764,45 @@ export interface Database {
         }
         Relationships: []
       }
+      advogado_access: {
+        Row: {
+          id: string
+          organization_id: string
+          family_id: string
+          user_id: string | null
+          email: string
+          nivel: string
+          convite_token: string | null
+          aceito_em: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string
+          family_id: string
+          user_id?: string | null
+          email: string
+          nivel?: string
+          convite_token?: string | null
+          aceito_em?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          family_id?: string
+          user_id?: string | null
+          email?: string
+          nivel?: string
+          convite_token?: string | null
+          aceito_em?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       radar_clientes: {
         Row: {
           id: string
@@ -1290,6 +1329,22 @@ export interface Database {
       }
       aceitar_convite_familia: {
         Args: { p_token: string }
+        Returns: string
+      }
+      aceitar_convite_advogado: {
+        Args: { p_token: string }
+        Returns: string
+      }
+      advogado_clausula_criar: {
+        Args: { p_holding_id: string; p_tipo: string; p_descricao?: string | null; p_responsavel?: string | null }
+        Returns: string
+      }
+      advogado_clausula_excluir: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      advogado_documento_criar: {
+        Args: { p_holding_id: string; p_nome: string; p_tipo: string; p_storage_path: string; p_competencia?: string | null }
         Returns: string
       }
       ver_convite: {
