@@ -141,6 +141,12 @@ export default async function AdminPage({
             >
               <Ticket size={15} /> Cupons
             </Link>
+            <Link
+              href="/app/admin/vendas-agente"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink-muted transition hover:border-gold hover:text-navy"
+            >
+              <Bot size={15} /> Agente de vendas
+            </Link>
           </div>
       {searchParams?.error && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
