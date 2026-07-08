@@ -19,6 +19,10 @@ type Molde = {
   notaPeca: string
   // o Radar comercial (garimpo/prospecção) é sensível para OAB
   radarComercialSensivel: boolean
+  // o PARCEIRO complementar que este escritório convida
+  parceiro: string // "advogado" | "contador"
+  parceiroRegistro: string // "OAB" | "CRC"
+  parceiroContribui: string // o que o parceiro registra em contribuição
 }
 
 const CONTABIL: Molde = {
@@ -32,6 +36,9 @@ const CONTABIL: Molde = {
   notaPeca:
     'Esta minuta é um documento de registro societário elaborado pelo contador responsável. Não constitui parecer jurídico. A redação e a interpretação de instrumentos como doações, cláusulas de proteção patrimonial, acordos de quotistas e alterações contratuais são atribuição do advogado. Confira os dados antes de colher as assinaturas.',
   radarComercialSensivel: false,
+  parceiro: 'advogado',
+  parceiroRegistro: 'OAB',
+  parceiroContribui: 'cláusulas de proteção',
 }
 
 const JURIDICO: Molde = {
@@ -45,8 +52,17 @@ const JURIDICO: Molde = {
   notaPeca:
     'Documento societário gerado a partir dos dados da estrutura. A escrituração contábil de suporte é de responsabilidade do contador da família. Confira os dados antes de colher as assinaturas.',
   radarComercialSensivel: true,
+  parceiro: 'contador',
+  parceiroRegistro: 'CRC',
+  parceiroContribui: 'distribuições',
 }
 
 export function molde(perfil: Perfil): Molde {
   return perfil === 'juridico' ? JURIDICO : CONTABIL
+}
+
+// Papel do PARCEIRO convidado, dado o perfil do escritório que possui a família.
+// Escritório contábil convida advogado; escritório jurídico convida contador.
+export function parceiroRole(orgPerfil: string | null | undefined): 'advogado' | 'contador' {
+  return orgPerfil === 'juridico' ? 'contador' : 'advogado'
 }

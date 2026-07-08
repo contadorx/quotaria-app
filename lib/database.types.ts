@@ -1347,6 +1347,10 @@ export interface Database {
         Args: { p_holding_id: string; p_nome: string; p_tipo: string; p_storage_path: string; p_competencia?: string | null }
         Returns: string
       }
+      parceiro_distribuicao_criar: {
+        Args: { p_holding_id: string; p_competencia: string; p_valor: number; p_tipo?: string; p_deliberacao?: string | null }
+        Returns: string
+      }
       ver_convite: {
         Args: { p_token: string }
         Returns: { organizacao: string; email: string; papel: string; invalido: boolean }[]

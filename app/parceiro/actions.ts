@@ -62,3 +62,19 @@ export async function advogadoExcluirClausula(formData: FormData) {
   revalidatePath('/parceiro')
   redirect('/parceiro?message=' + encodeURIComponent('Cláusula removida.'))
 }
+
+// Contribuição do contador parceiro: registrar distribuição
+export async function parceiroCriarDistribuicao(formData: FormData) {
+  const supabase = createClient()
+  const valor = Number(String(formData.get('valor') ?? '0').replace(',', '.'))
+  const { error } = await supabase.rpc('parceiro_distribuicao_criar', {
+    p_holding_id: String(formData.get('holding_id') ?? ''),
+    p_competencia: String(formData.get('competencia') ?? ''),
+    p_valor: Number.isFinite(valor) ? valor : 0,
+    p_tipo: String(formData.get('tipo') ?? 'lucros'),
+    p_deliberacao: String(formData.get('deliberacao') ?? '') || null,
+  })
+  if (error) redirect('/parceiro?error=' + encodeURIComponent(error.message))
+  revalidatePath('/parceiro')
+  redirect('/parceiro?message=' + encodeURIComponent('Distribuição registrada.'))
+}

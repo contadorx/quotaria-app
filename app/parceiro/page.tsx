@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { sairParceiro, advogadoCriarClausula, advogadoExcluirClausula } from './actions'
+import { sairParceiro, advogadoCriarClausula, advogadoExcluirClausula, parceiroCriarDistribuicao } from './actions'
 import { PendingButton, SubmitButton } from '@/components/submit-button'
 import { fieldClass } from '@/components/ui'
-import { LABEL_TIPO_DIREITO, formatarMoeda } from '@/lib/format'
+import { LABEL_TIPO_DIREITO, formatarMoeda, formatarData } from '@/lib/format'
+import { parceiroRole } from '@/lib/perfil'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +47,8 @@ export default async function Parceiro({ searchParams }: { searchParams: { fam?:
   // nomes das famílias para o seletor
   const { data: familias } = await supabase.from('families').select('id, name').in('id', acessos.map((a) => a.family_id))
   const nomeFam = new Map((familias ?? []).map((f) => [f.id, f.name]))
-  const { data: org } = await supabase.from('organizations').select('nome').eq('id', acessoSel.organization_id).maybeSingle()
+  const { data: org } = await supabase.from('organizations').select('nome, perfil').eq('id', acessoSel.organization_id).maybeSingle()
+  const papel = parceiroRole(org?.perfil) // 'advogado' | 'contador' — o que EU sou nesta família
 
   const { data: holdings } = await supabase.from('holdings').select('id, razao_social, cnpj, tipo_societario').eq('family_id', sel).order('razao_social')
   const holdingIds = (holdings ?? []).map((h) => h.id)
@@ -54,11 +56,12 @@ export default async function Parceiro({ searchParams }: { searchParams: { fam?:
   const { data: socios } = await supabase.from('socios').select('id, nome').eq('family_id', sel)
   const nomeSocio = new Map((socios ?? []).map((s) => [s.id, s.nome]))
   const inH = holdingIds.length ? holdingIds : ['00000000-0000-0000-0000-000000000000']
-  const [{ data: quotas }, { data: bens }, { data: clausulas }, { data: docs }] = await Promise.all([
+  const [{ data: quotas }, { data: bens }, { data: clausulas }, { data: docs }, { data: distrib }] = await Promise.all([
     supabase.from('quotas').select('holding_id, socio_id, percentual, tipo_direito').in('holding_id', inH),
     supabase.from('bens').select('holding_id, descricao, valor_mercado').in('holding_id', inH),
     supabase.from('clausulas').select('id, holding_id, tipo, descricao, responsavel').in('holding_id', inH),
     supabase.from('documentos').select('holding_id, nome, tipo').in('holding_id', inH),
+    supabase.from('distribuicoes').select('holding_id, competencia, valor_total, tipo, deliberacao').in('holding_id', inH).order('competencia', { ascending: false }),
   ])
 
   return (
@@ -66,7 +69,7 @@ export default async function Parceiro({ searchParams }: { searchParams: { fam?:
       <header className="border-b border-line bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <div>
-            <p className="text-sm font-bold text-navy">Área do advogado</p>
+            <p className="text-sm font-bold text-navy">Área do {papel}</p>
             <p className="text-xs text-ink-soft">{org?.nome ?? 'Escritório parceiro'}</p>
           </div>
           <form><PendingButton action={sairParceiro} className="text-xs font-medium text-ink-soft transition hover:text-ink">Sair</PendingButton></form>
@@ -132,7 +135,7 @@ export default async function Parceiro({ searchParams }: { searchParams: { fam?:
               {(clausulas ?? []).map((c) => (
                 <li key={c.id} className="flex items-center justify-between gap-3">
                   <span className="text-ink">{LABEL_CLAUSULA[c.tipo] ?? c.tipo}{c.descricao ? ` — ${c.descricao}` : ''} <span className="text-ink-soft">({nomeHolding.get(c.holding_id ?? '')})</span></span>
-                  {contribui && (
+                  {contribui && papel === 'advogado' && (
                     <form>
                       <input type="hidden" name="id" value={c.id} />
                       <PendingButton action={advogadoExcluirClausula} className="text-xs text-ink-soft transition hover:text-red-600">remover</PendingButton>
@@ -143,7 +146,7 @@ export default async function Parceiro({ searchParams }: { searchParams: { fam?:
             </ul>
           )}
 
-          {contribui && (holdings ?? []).length > 0 && (
+          {contribui && papel === 'advogado' && (holdings ?? []).length > 0 && (
             <form className="mt-4 border-t border-line pt-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gold-deep">Registrar cláusula</p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -157,6 +160,46 @@ export default async function Parceiro({ searchParams }: { searchParams: { fam?:
                 <input name="responsavel" placeholder="Responsável (advogado)" className={`${fieldClass} sm:col-span-2`} />
               </div>
               <div className="mt-3"><SubmitButton action={advogadoCriarClausula}>Registrar cláusula</SubmitButton></div>
+            </form>
+          )}
+        </div>
+
+        {/* distribuições */}
+        <h2 className="mt-8 text-sm font-bold text-ink">Distribuições</h2>
+        <div className="mt-3 rounded-xl2 border border-line bg-white p-5">
+          {(distrib ?? []).length === 0 ? (
+            <p className="text-sm text-ink-soft">Nenhuma distribuição registrada.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {(distrib ?? []).map((d, i) => (
+                <li key={i} className="flex items-center justify-between gap-3">
+                  <span className="text-ink">
+                    {new Date(d.competencia).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })} · {formatarMoeda(Number(d.valor_total))}
+                    <span className="text-ink-soft"> ({nomeHolding.get(d.holding_id ?? '')})</span>
+                  </span>
+                  {!d.deliberacao && <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">sem deliberação</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {contribui && papel === 'contador' && (holdings ?? []).length > 0 && (
+            <form className="mt-4 border-t border-line pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gold-deep">Registrar distribuição</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select name="holding_id" className={fieldClass} defaultValue={holdingIds[0]}>
+                  {(holdings ?? []).map((h) => <option key={h.id} value={h.id}>{h.razao_social}</option>)}
+                </select>
+                <select name="tipo" className={fieldClass} defaultValue="lucros">
+                  <option value="lucros">Lucros</option>
+                  <option value="jcp">JCP</option>
+                  <option value="outro">Outro</option>
+                </select>
+                <input name="competencia" type="date" className={fieldClass} />
+                <input name="valor" inputMode="decimal" placeholder="Valor (R$)" className={fieldClass} />
+                <input name="deliberacao" placeholder="Deliberação / ata (opcional)" className={`${fieldClass} sm:col-span-2`} />
+              </div>
+              <div className="mt-3"><SubmitButton action={parceiroCriarDistribuicao}>Registrar distribuição</SubmitButton></div>
             </form>
           )}
         </div>
@@ -176,7 +219,9 @@ export default async function Parceiro({ searchParams }: { searchParams: { fam?:
         )}
 
         <p className="mt-10 text-center text-[11px] text-ink-soft">
-          Você registra e interpreta os instrumentos jurídicos; a escrituração e os cálculos ficam com o contador da família.
+          {papel === 'advogado'
+            ? 'Você registra e interpreta os instrumentos jurídicos; a escrituração e os cálculos ficam com o contador da família.'
+            : 'Você cuida da escrituração e dos cálculos; a redação e a interpretação dos instrumentos jurídicos ficam com o advogado da família.'}
         </p>
       </main>
     </div>

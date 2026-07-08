@@ -16,6 +16,7 @@ import {
 import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato, convidarFamilia, revogarAcessoFamilia, convidarAdvogado, revogarAcessoAdvogado } from '../../actions'
 import { headers } from 'next/headers'
 import { CopyButton } from '@/components/copy-button'
+import { molde, perfilValido } from '@/lib/perfil'
 import { PageHeader, Card, ListCard, EmptyState, SectionTitle, Label, SubmitButton, Pill, fieldClass } from '@/components/ui'
 import { DeleteButton } from '@/components/delete-button'
 import { EditDialog } from '@/components/edit-dialog'
@@ -53,6 +54,8 @@ export default async function FamilyDetail({
     .select('id, email, nivel, aceito_em, convite_token, created_at')
     .eq('family_id', params.id)
     .order('created_at')
+  const { data: orgPerfilRow } = await supabase.from('organizations').select('perfil').limit(1).maybeSingle()
+  const mp = molde(perfilValido(orgPerfilRow?.perfil))
   const h = headers()
   const base = `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('host')}`
 
@@ -321,17 +324,17 @@ export default async function FamilyDetail({
       </div>
 
       {/* HOLDINGS */}
-      <div className="mt-10"><SectionTitle>Acesso do advogado</SectionTitle></div>
+      <div className="mt-10"><SectionTitle>Acesso do {mp.parceiro}</SectionTitle></div>
       <p className="mt-1 text-sm text-ink-muted">
-        Convide o advogado parceiro para esta família específica. Em <strong>leitura</strong>, ele acompanha a estrutura;
-        em <strong>contribuição</strong>, também registra cláusulas e sobe peças ao cofre. Ele nunca vê suas outras famílias.
+        Convide o {mp.parceiro} parceiro para esta família específica. Em <strong>leitura</strong>, ele acompanha a estrutura;
+        em <strong>contribuição</strong>, também registra {mp.parceiroContribui} nesta família. Ele nunca vê suas outras famílias.
       </p>
       <Card className="mt-3 p-5">
         <form className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="family_id" value={family.id} />
           <div className="grow">
-            <Label htmlFor="adv_email">E-mail do advogado</Label>
-            <input id="adv_email" name="email" type="email" placeholder="advogado@escritorio.adv.br" className={fieldClass} />
+            <Label htmlFor="adv_email">E-mail do {mp.parceiro}</Label>
+            <input id="adv_email" name="email" type="email" placeholder={mp.parceiro === 'contador' ? 'contador@escritorio.com.br' : 'advogado@escritorio.adv.br'} className={fieldClass} />
           </div>
           <div>
             <Label htmlFor="adv_nivel">Nível</Label>
@@ -345,7 +348,7 @@ export default async function FamilyDetail({
       </Card>
       <div className="mt-3">
         {!acessosAdv || acessosAdv.length === 0 ? (
-          <EmptyState>Nenhum advogado com acesso a esta família.</EmptyState>
+          <EmptyState>Nenhum {mp.parceiro} com acesso a esta família.</EmptyState>
         ) : (
           <ListCard>
             {acessosAdv.map((a) => {
