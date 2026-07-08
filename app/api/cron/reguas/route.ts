@@ -70,20 +70,22 @@ export async function GET(req: Request) {
       .eq('ativo', true)
     const { data: orgs } = await admin
       .from('organizations')
-      .select('id, nome, valor_mensal, proximo_vencimento, assinatura_status, fatura_url')
-      .in('assinatura_status', ['ativa', 'inadimplente'])
+      .select('id, nome, valor_mensal, proximo_vencimento, assinatura_status, fatura_url, fatura_vencimento')
+      .in('assinatura_status', ['ativa', 'inadimplente', 'pendente'])
       .eq('is_teste', false)
-      .not('proximo_vencimento', 'is', null)
 
     for (const o of orgs ?? []) {
       const para = emailDono.get(o.id)
-      if (!para || !o.proximo_vencimento) continue
-      const delta = diasEntre(o.proximo_vencimento, hoje) // hoje - vencimento
+      // referência do vencimento: assinatura ativa usa o próximo vencimento;
+      // pendente (1ª fatura ainda não paga) usa o vencimento da fatura gerada.
+      const venc = o.proximo_vencimento ?? o.fatura_vencimento
+      if (!para || !venc) continue
+      const delta = diasEntre(venc, hoje) // hoje - vencimento
       for (const p of passos ?? []) {
         if (p.quando !== delta) continue
         const { error: dup } = await admin.from('cobranca_envios').insert({
           organization_id: o.id,
-          vencimento: o.proximo_vencimento,
+          vencimento: venc,
           quando: p.quando,
         })
         if (dup) {
@@ -93,7 +95,7 @@ export async function GET(req: Request) {
         const vars = {
           nome: o.nome,
           valor: brl(Number(o.valor_mensal)),
-          vencimento: dataBr(o.proximo_vencimento),
+          vencimento: dataBr(venc),
         }
         const r = await enviarEmail({
           para,
@@ -109,7 +111,7 @@ export async function GET(req: Request) {
             .from('cobranca_envios')
             .delete()
             .eq('organization_id', o.id)
-            .eq('vencimento', o.proximo_vencimento)
+            .eq('vencimento', venc)
             .eq('quando', p.quando)
         }
       }
