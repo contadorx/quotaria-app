@@ -1082,8 +1082,69 @@ export async function updateRadarStatus(formData: FormData) {
   if (!id) redirect('/app/radar')
   const supabase = createClient()
   await supabase.from('radar_clientes').update({ status: to }).eq('id', id)
+
+  // Pipeline ativo: ao entrar num estágio, se não houver atividade em aberto,
+  // o sistema já sugere a próxima ação (gera a atividade com prazo).
+  const proxima: Record<string, { tipo: string; descricao: string; dias: number }> = {
+    abordado: { tipo: 'reuniao', descricao: 'Agendar o diagnóstico patrimonial', dias: 2 },
+    diagnostico: { tipo: 'email', descricao: 'Enviar o diagnóstico e marcar a devolutiva', dias: 1 },
+    proposta: { tipo: 'followup', descricao: 'Follow-up da proposta enviada', dias: 2 },
+  }
+  const sug = proxima[to]
+  if (sug) {
+    const { count } = await supabase
+      .from('radar_atividades').select('*', { count: 'exact', head: true })
+      .eq('radar_id', id).is('concluida_em', null)
+    if (!count) {
+      const venc = new Date(); venc.setDate(venc.getDate() + sug.dias)
+      await supabase.from('radar_atividades').insert({
+        radar_id: id, tipo: sug.tipo, descricao: sug.descricao, vence_em: venc.toISOString().slice(0, 10),
+      })
+    }
+  }
   revalidatePath(`/app/radar/${id}`)
   redirect(`/app/radar/${id}`)
+}
+
+export async function criarAtividadeRadar(formData: FormData) {
+  const radarId = s(formData, 'radar_id')
+  if (!radarId) redirect('/app/radar')
+  const supabase = createClient()
+  await supabase.from('radar_atividades').insert({
+    radar_id: radarId,
+    tipo: s(formData, 'tipo') || 'followup',
+    descricao: orNull(s(formData, 'descricao')),
+    vence_em: orNull(s(formData, 'vence_em')),
+  })
+  revalidatePath(`/app/radar/${radarId}`)
+  redirect(`/app/radar/${radarId}`)
+}
+
+export async function concluirAtividadeRadar(formData: FormData) {
+  const radarId = s(formData, 'radar_id')
+  const id = s(formData, 'id')
+  const supabase = createClient()
+  await supabase.from('radar_atividades').update({ concluida_em: new Date().toISOString() }).eq('id', id)
+  revalidatePath(`/app/radar/${radarId}`)
+  redirect(`/app/radar/${radarId}`)
+}
+
+export async function reabrirAtividadeRadar(formData: FormData) {
+  const radarId = s(formData, 'radar_id')
+  const id = s(formData, 'id')
+  const supabase = createClient()
+  await supabase.from('radar_atividades').update({ concluida_em: null }).eq('id', id)
+  revalidatePath(`/app/radar/${radarId}`)
+  redirect(`/app/radar/${radarId}`)
+}
+
+export async function excluirAtividadeRadar(formData: FormData) {
+  const radarId = s(formData, 'radar_id')
+  const id = s(formData, 'id')
+  const supabase = createClient()
+  await supabase.from('radar_atividades').delete().eq('id', id)
+  revalidatePath(`/app/radar/${radarId}`)
+  redirect(`/app/radar/${radarId}`)
 }
 
 export async function deleteRadarCliente(formData: FormData) {
