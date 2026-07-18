@@ -32,6 +32,11 @@ export type Achado = {
 export type Recomendacao = { titulo: string; texto: string }
 
 // ---- cenário sucessório (A × B) --------------------------------------------
+// Estimativas de custo de montagem da estrutura (variam por município/estado).
+// ITBI pode ser imune na integralização (Tema 796 STF) conforme a atividade.
+const ITBI_PCT = 2.0
+const ESCRITURA_PCT = 1.5
+
 export function cenarioSucessorio(c: ClienteDiagnostico) {
   const base = Number(c.patrimonio)
   const itcmd = (base * Number(c.itcmd_pct)) / 100
@@ -44,7 +49,18 @@ export function cenarioSucessorio(c: ClienteDiagnostico) {
   const itcmdDoacaoB = itcmd // mesma alíquota, base atual
   const totalB = itcmdDoacaoB
   const economia = Math.max(0, totalA - totalB)
-  return { base, itcmd, custas, totalA, itcmdDoacaoB, totalB, economia }
+
+  // Custo de montar a estrutura (só se houver imóveis a transferir): ITBI e
+  // escritura/registro. Estimativas — variam por município/estado; o ITBI pode
+  // ser IMUNE na integralização (Tema 796 STF) conforme a atividade da holding.
+  const temImovel = Number(c.n_imoveis) > 0
+  const baseImovel = temImovel ? base : 0
+  const itbi = (baseImovel * ITBI_PCT) / 100
+  const escritura = (baseImovel * ESCRITURA_PCT) / 100
+  const custoMontagem = itbi + escritura
+  const economiaLiquida = Math.max(0, economia - custoMontagem)
+
+  return { base, itcmd, custas, totalA, itcmdDoacaoB, totalB, economia, itbi, escritura, custoMontagem, economiaLiquida, temImovel }
 }
 
 // ---- cenário locação (PF × holding) ----------------------------------------

@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import { PortalUpload } from '@/components/portal-upload'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { sairPortal } from './actions'
@@ -37,6 +38,8 @@ export default async function Portal({ searchParams }: { searchParams: { fam?: s
   const cor = org?.cor_primaria || '#12284B'
 
   const { data: family } = await supabase.from('families').select('id, name').eq('id', familyId).single()
+  const { data: solicitacoes } = await supabase.from('familia_solicitacoes').select('id, descricao, status').eq('family_id', familyId).order('created_at', { ascending: false })
+  const { data: enviados } = await supabase.from('familia_envios').select('id, nome, created_at').eq('family_id', familyId).order('created_at', { ascending: false })
   const { data: holdings } = await supabase
     .from('holdings').select('id, razao_social, nome_fantasia, cnpj, tipo_societario').eq('family_id', familyId).order('razao_social')
   const holdingIds = (holdings ?? []).map((h) => h.id)
@@ -182,6 +185,31 @@ export default async function Portal({ searchParams }: { searchParams: { fam?: s
             </div>
           </>
         )}
+
+        {/* documentos: solicitados + enviar */}
+        <section className="mb-6 rounded-xl2 border border-line bg-white p-5">
+          <h2 className="text-sm font-bold text-navy">Documentos</h2>
+          <p className="mt-1 text-xs text-ink-muted">Envie aqui os documentos pedidos pelo seu contador. Ficam disponíveis com segurança para o escritório.</p>
+          {(solicitacoes ?? []).length > 0 && (
+            <div className="mt-3 space-y-2">
+              {(solicitacoes ?? []).map((sol) => (
+                <div key={sol.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-line px-3 py-2 text-sm">
+                  <span className="flex-1 text-ink">{sol.descricao}</span>
+                  {sol.status === 'enviado'
+                    ? <span className="text-xs font-medium text-emerald-700">✓ enviado</span>
+                    : <PortalUpload familyId={familyId} solicitacaoId={sol.id} />}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-3 border-t border-line pt-3">
+            <p className="mb-2 text-xs font-medium text-ink-muted">Enviar outro documento</p>
+            <PortalUpload familyId={familyId} />
+          </div>
+          {(enviados ?? []).length > 0 && (
+            <p className="mt-3 text-[11px] text-ink-soft">Você já enviou {(enviados ?? []).length} documento(s).</p>
+          )}
+        </section>
 
         {/* cofre */}
         {(docs ?? []).length > 0 && (

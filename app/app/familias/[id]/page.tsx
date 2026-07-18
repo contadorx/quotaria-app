@@ -13,7 +13,8 @@ import {
   LABEL_ESTADO_CIVIL,
   LABEL_REGIME_BENS,
 } from '@/lib/format'
-import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato, convidarFamilia, revogarAcessoFamilia, convidarAdvogado, revogarAcessoAdvogado } from '../../actions'
+import { createHolding, createSocio, deleteHolding, deleteSocio, updateFamily, updateSocio, createContato, deleteContato, convidarFamilia, revogarAcessoFamilia, convidarAdvogado, revogarAcessoAdvogado, criarSolicitacaoDocumento, excluirSolicitacaoDocumento, marcarEnvioLido } from '../../actions'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
 import { CopyButton } from '@/components/copy-button'
 import { molde, perfilValido } from '@/lib/perfil'
@@ -32,7 +33,17 @@ export default async function FamilyDetail({
 
   const { data: family } = await supabase
     .from('families').select('id, name, notes, created_at').eq('id', params.id).single()
-  if (!family) notFound()
+  const { data: solicitacoesDoc } = await supabase.from('familia_solicitacoes').select('id, descricao, status, created_at').eq('family_id', params.id).order('created_at', { ascending: false })
+  const { data: enviosDoc } = await supabase.from('familia_envios').select('id, nome, observacao, storage_path, lido, created_at').eq('family_id', params.id).order('created_at', { ascending: false })
+  const envioUrl = new Map<string, string>()
+  if ((enviosDoc ?? []).length > 0) {
+    const admin = createAdminClient()
+    for (const e of enviosDoc ?? []) {
+      if (!e.storage_path) continue
+      const { data: signed } = await admin.storage.from('documentos').createSignedUrl(e.storage_path, 600)
+      if (signed?.signedUrl) envioUrl.set(e.id, signed.signedUrl)
+    }
+  }  if (!family) notFound()
 
   const { data: socios } = await supabase
     .from('socios').select('id, nome, papel_familiar, regime_bens, cpf, estado_civil')

@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     const dados = `Cliente: ${c.nome}
 Perfil: ${c.n_imoveis} imóveis; patrimônio ${brl(Number(c.patrimonio))}; aluguéis ${brl(Number(c.renda_aluguel_anual))}/ano; ${c.n_herdeiros} herdeiros; sócio de PJ: ${c.socio_pj ? 'sim' : 'não'}; recebe dividendos: ${c.recebe_dividendos ? 'sim' : 'não'}; UF ${c.uf}; ITCMD estimado ${c.itcmd_pct}%.
 Semáforo de saúde: ${sem.cor} — ${sem.texto}.
-Cenário sucessório (estimativa): inventário = ITCMD ${brl(suc.itcmd)} + custas ${brl(suc.custas)} = ${brl(suc.totalA)}; doação em vida ≈ ${brl(suc.totalB)}; economia estimada ${brl(suc.economia)}.
+Cenário sucessório (estimativa): inventário = ITCMD ${brl(suc.itcmd)} + custas ${brl(suc.custas)} = ${brl(suc.totalA)}; doação em vida ≈ ${brl(suc.totalB)}; economia bruta estimada ${brl(suc.economia)}.${suc.temImovel && suc.custoMontagem > 0 ? ` Custo de montar a estrutura (estimativa): ITBI ${brl(suc.itbi)} + escritura/registro ${brl(suc.escritura)} = ${brl(suc.custoMontagem)} (ITBI pode ser imune na integralização — Tema 796 STF, conforme a atividade da holding); economia LÍQUIDA estimada ${brl(suc.economiaLiquida)}.` : ''}
 Cenário de locação (estimativa anual): pessoa física ${brl(loc.pf)}; holding ${brl(loc.holding)}; economia ${brl(loc.economia)}/ano; lead quente da Reforma: ${loc.quente ? 'sim' : 'não'}.
 Pontos de atenção: ${ach.length ? ach.map((a) => `[${a.nivel}] ${a.titulo} — ${a.texto}`).join(' | ') : 'nenhum relevante'}.
 Recomendações do sistema: ${recs.map((r) => `${r.titulo}: ${r.texto}`).join(' | ')}.`

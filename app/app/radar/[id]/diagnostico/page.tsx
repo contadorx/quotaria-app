@@ -190,6 +190,23 @@ export default async function DiagnosticoPage({ params }: { params: { id: string
               é exatamente o que a manutenção recorrente organiza, lembra e prova.
             </div>
           )}
+          {suc.temImovel && suc.custoMontagem > 0 && (
+            <div className="mt-3 rounded-xl border border-line bg-white px-4 py-3 text-sm">
+              <p className="font-semibold text-navy">Custo de montar a estrutura (estimativa)</p>
+              <div className="mt-1 grid gap-1 text-ink-muted sm:grid-cols-3">
+                <span>ITBI (~{2}%): <strong className="text-ink">{formatarMoeda(suc.itbi)}</strong></span>
+                <span>Escritura/registro (~{1.5}%): <strong className="text-ink">{formatarMoeda(suc.escritura)}</strong></span>
+                <span>Total de montagem: <strong className="text-ink">{formatarMoeda(suc.custoMontagem)}</strong></span>
+              </div>
+              <p className="mt-2 text-ink">
+                Economia líquida estimada (já descontada a montagem): <strong className="text-emerald-700">{formatarMoeda(suc.economiaLiquida)}</strong>.
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
+                Estimativas — ITBI e emolumentos variam por município/estado. Na integralização de imóveis, o ITBI
+                pode ser <strong>imune</strong> (Tema 796 do STF) conforme a atividade preponderante da holding; confirme caso a caso com o advogado.
+              </p>
+            </div>
+          )}
         </section>
 
         {/* 3b. a conta — locação */}

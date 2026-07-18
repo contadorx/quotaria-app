@@ -1205,3 +1205,30 @@ export async function updateDoacaoCronograma(formData: FormData) {
   revalidatePath(voltar)
   redirect(voltar)
 }
+
+// -------------------------- Documentos da família (solicitação + recebimento) --------------------------
+export async function criarSolicitacaoDocumento(formData: FormData) {
+  const familyId = s(formData, 'family_id')
+  const descricao = s(formData, 'descricao')
+  if (!familyId || !descricao) redirect(`/app/familias/${familyId}`)
+  const supabase = createClient()
+  await supabase.from('familia_solicitacoes').insert({ family_id: familyId, descricao })
+  revalidatePath(`/app/familias/${familyId}`)
+  redirect(`/app/familias/${familyId}?message=` + encodeURIComponent('Solicitação criada.'))
+}
+
+export async function excluirSolicitacaoDocumento(formData: FormData) {
+  const familyId = s(formData, 'family_id')
+  const supabase = createClient()
+  await supabase.from('familia_solicitacoes').delete().eq('id', s(formData, 'id'))
+  revalidatePath(`/app/familias/${familyId}`)
+  redirect(`/app/familias/${familyId}`)
+}
+
+export async function marcarEnvioLido(formData: FormData) {
+  const familyId = s(formData, 'family_id')
+  const supabase = createClient()
+  await supabase.from('familia_envios').update({ lido: true }).eq('id', s(formData, 'id'))
+  revalidatePath(`/app/familias/${familyId}`)
+  redirect(`/app/familias/${familyId}`)
+}

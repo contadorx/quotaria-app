@@ -6,12 +6,12 @@ import { PrintButton } from '@/components/print-button'
 import { EnviarZapSign } from '@/components/enviar-zapsign'
 import { fieldClass, Label } from '@/components/ui'
 import {
-  ataAprovacaoContas, ataDistribuicao, type MinutaTipo, type SocioQuota, type Minuta,
+  ataAprovacaoContas, ataDistribuicao, ataReuniaoSocios, ataReuniaoFamilia, type MinutaTipo, type SocioQuota, type Minuta,
 } from '@/lib/minutas'
 
 export const dynamic = 'force-dynamic'
 
-const TIPOS: MinutaTipo[] = ['aprovacao-contas', 'distribuicao']
+const TIPOS: MinutaTipo[] = ['aprovacao-contas', 'distribuicao', 'reuniao-socios', 'reuniao-familia']
 
 function hojeISO() {
   return new Date().toISOString().slice(0, 10)
@@ -22,7 +22,7 @@ export default async function MinutaGeradaPage({
   searchParams,
 }: {
   params: { id: string; tipo: string }
-  searchParams: { exercicio?: string; competencia?: string; valor?: string; data?: string; proporcional?: string }
+  searchParams: { exercicio?: string; competencia?: string; valor?: string; data?: string; proporcional?: string; assunto?: string }
 }) {
   const tipo = params.tipo as MinutaTipo
   if (!TIPOS.includes(tipo)) notFound()
@@ -56,11 +56,16 @@ export default async function MinutaGeradaPage({
   const valor = Number(searchParams?.valor) || 0
   const dataReuniao = searchParams?.data || hojeISO()
   const proporcional = searchParams?.proporcional !== 'nao'
+  const assunto = searchParams?.assunto || ''
 
   const minuta: Minuta =
     tipo === 'aprovacao-contas'
       ? ataAprovacaoContas(holding, linhas, { exercicio, dataReuniao })
-      : ataDistribuicao(holding, linhas, { competencia, valorTotal: valor, dataReuniao, proporcional })
+      : tipo === 'reuniao-socios'
+        ? ataReuniaoSocios(holding, linhas, { dataReuniao, assunto })
+        : tipo === 'reuniao-familia'
+          ? ataReuniaoFamilia(holding, linhas, { dataReuniao, assunto })
+          : ataDistribuicao(holding, linhas, { competencia, valorTotal: valor, dataReuniao, proporcional })
 
   const semSocios = linhas.length === 0
 
@@ -79,12 +84,19 @@ export default async function MinutaGeradaPage({
         <div className="sm:col-span-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Dados da ata</p>
         </div>
-        {tipo === 'aprovacao-contas' ? (
+        {tipo === 'aprovacao-contas' && (
           <div>
             <Label htmlFor="exercicio">Exercício</Label>
             <input id="exercicio" name="exercicio" type="number" defaultValue={exercicio} className={fieldClass} />
           </div>
-        ) : (
+        )}
+        {(tipo === 'reuniao-socios' || tipo === 'reuniao-familia') && (
+          <div className="sm:col-span-2">
+            <Label htmlFor="assunto">Pauta / assunto da reunião</Label>
+            <input id="assunto" name="assunto" defaultValue={assunto} placeholder={tipo === 'reuniao-familia' ? 'ex.: diretrizes de sucessão e uso dos imóveis da família' : 'ex.: aprovação do calendário anual de obrigações'} className={fieldClass} />
+          </div>
+        )}
+        {tipo === 'distribuicao' && (
           <>
             <div>
               <Label htmlFor="competencia">Competência</Label>

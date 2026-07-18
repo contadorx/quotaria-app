@@ -74,6 +74,18 @@ export type TipoDocumento =
 export interface Database {
   public: {
     Tables: {
+      familia_solicitacoes: {
+        Row: { id: string; organization_id: string; family_id: string; descricao: string; status: string; created_at: string }
+        Insert: { id?: string; organization_id?: string; family_id: string; descricao: string; status?: string; created_at?: string }
+        Update: { id?: string; organization_id?: string; family_id?: string; descricao?: string; status?: string; created_at?: string }
+        Relationships: []
+      }
+      familia_envios: {
+        Row: { id: string; organization_id: string; family_id: string; solicitacao_id: string | null; nome: string; storage_path: string | null; observacao: string | null; lido: boolean; created_at: string }
+        Insert: { id?: string; organization_id: string; family_id: string; solicitacao_id?: string | null; nome: string; storage_path?: string | null; observacao?: string | null; lido?: boolean; created_at?: string }
+        Update: { id?: string; organization_id?: string; family_id?: string; solicitacao_id?: string | null; nome?: string; storage_path?: string | null; observacao?: string | null; lido?: boolean; created_at?: string }
+        Relationships: []
+      }
       families: {
         Row: {
           id: string
