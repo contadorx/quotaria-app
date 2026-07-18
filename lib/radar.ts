@@ -4,6 +4,7 @@
 
 export type Sinais = {
   n_imoveis: number
+  valor_imoveis?: number | null
   patrimonio: number
   renda_aluguel_anual: number
   socio_pj: boolean

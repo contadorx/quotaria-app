@@ -833,6 +833,12 @@ export interface Database {
         Update: { id?: number; system_prompt?: string | null; modelo?: string | null; ativo?: boolean; updated_at?: string }
         Relationships: []
       }
+      alerta_envios: {
+        Row: { organization_id: string; ultimo_hash: string | null; ultimo_envio: string | null; itens: number; updated_at: string }
+        Insert: { organization_id: string; ultimo_hash?: string | null; ultimo_envio?: string | null; itens?: number; updated_at?: string }
+        Update: { organization_id?: string; ultimo_hash?: string | null; ultimo_envio?: string | null; itens?: number; updated_at?: string }
+        Relationships: []
+      }
       cupons: {
         Row: { id: string; codigo: string; tipo: string; valor: number; duracao_meses: number | null; validade: string | null; limite_usos: number | null; usos: number; ativo: boolean; observacoes: string | null; created_at: string }
         Insert: { id?: string; codigo: string; tipo: string; valor: number; duracao_meses?: number | null; validade?: string | null; limite_usos?: number | null; usos?: number; ativo?: boolean; observacoes?: string | null; created_at?: string }
@@ -859,6 +865,7 @@ export interface Database {
           nome: string
           uf: string
           n_imoveis: number
+          valor_imoveis: number | null
           patrimonio: number
           renda_aluguel_anual: number
           socio_pj: boolean
@@ -885,6 +892,7 @@ export interface Database {
           nome: string
           uf?: string
           n_imoveis?: number
+          valor_imoveis?: number | null
           patrimonio?: number
           renda_aluguel_anual?: number
           socio_pj?: boolean
@@ -911,6 +919,7 @@ export interface Database {
           nome?: string
           uf?: string
           n_imoveis?: number
+          valor_imoveis?: number | null
           patrimonio?: number
           renda_aluguel_anual?: number
           socio_pj?: boolean
@@ -956,6 +965,7 @@ export interface Database {
           fatura_valor: number | null
           fatura_vencimento: string | null
           cupom_codigo: string | null
+          alertas_ativos: boolean
           valor_cheio: number | null
           desconto_meses_restantes: number | null
           is_teste: boolean
@@ -991,6 +1001,7 @@ export interface Database {
           fatura_valor?: number | null
           fatura_vencimento?: string | null
           cupom_codigo?: string | null
+          alertas_ativos?: boolean
           valor_cheio?: number | null
           desconto_meses_restantes?: number | null
           is_teste?: boolean
@@ -1026,6 +1037,7 @@ export interface Database {
           fatura_valor?: number | null
           fatura_vencimento?: string | null
           cupom_codigo?: string | null
+          alertas_ativos?: boolean
           valor_cheio?: number | null
           desconto_meses_restantes?: number | null
           is_teste?: boolean

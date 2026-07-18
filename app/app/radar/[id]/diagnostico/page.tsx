@@ -204,6 +204,7 @@ export default async function DiagnosticoPage({ params }: { params: { id: string
               <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
                 Estimativas — ITBI e emolumentos variam por município/estado. Na integralização de imóveis, o ITBI
                 pode ser <strong>imune</strong> (Tema 796 do STF) conforme a atividade preponderante da holding; confirme caso a caso com o advogado.
+                {suc.imovelProxy && ' Base calculada pelo patrimônio total (proxy) — informe o "valor dos imóveis" no lead para um número mais preciso.'}
               </p>
             </div>
           )}

@@ -90,6 +90,10 @@ export default async function RadarPage({
             <input id="n_imoveis" name="n_imoveis" type="number" min="0" placeholder="4" className={fieldClass} />
           </div>
           <div>
+            <Label htmlFor="valor_imoveis">Valor dos imóveis (R$)</Label>
+            <input id="valor_imoveis" name="valor_imoveis" type="number" step="0.01" min="0" placeholder="opcional — ITBI/escritura" className={fieldClass} />
+          </div>
+          <div>
             <Label htmlFor="n_herdeiros">Nº de herdeiros</Label>
             <input id="n_herdeiros" name="n_herdeiros" type="number" min="0" placeholder="3" className={fieldClass} />
           </div>

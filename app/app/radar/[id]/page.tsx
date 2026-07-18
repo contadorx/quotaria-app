@@ -78,6 +78,10 @@ export default async function RadarClientePage({
                 <input id="e_imoveis" name="n_imoveis" type="number" min="0" defaultValue={c.n_imoveis} className={fieldClass} />
               </div>
               <div>
+                <Label htmlFor="e_valor_imoveis">Valor dos imóveis (R$) — opcional</Label>
+                <input id="e_valor_imoveis" name="valor_imoveis" type="number" step="0.01" min="0" defaultValue={(c as { valor_imoveis?: number | null }).valor_imoveis ?? ''} placeholder="para ITBI/escritura mais precisos" className={fieldClass} />
+              </div>
+              <div>
                 <Label htmlFor="e_herdeiros">Nº de herdeiros</Label>
                 <input id="e_herdeiros" name="n_herdeiros" type="number" min="0" defaultValue={c.n_herdeiros} className={fieldClass} />
               </div>

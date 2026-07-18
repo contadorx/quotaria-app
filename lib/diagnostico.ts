@@ -53,14 +53,16 @@ export function cenarioSucessorio(c: ClienteDiagnostico) {
   // Custo de montar a estrutura (só se houver imóveis a transferir): ITBI e
   // escritura/registro. Estimativas — variam por município/estado; o ITBI pode
   // ser IMUNE na integralização (Tema 796 STF) conforme a atividade da holding.
-  const temImovel = Number(c.n_imoveis) > 0
-  const baseImovel = temImovel ? base : 0
+  const temImovel = Number(c.n_imoveis) > 0 || Number(c.valor_imoveis ?? 0) > 0
+  const valorImoveis = Number(c.valor_imoveis ?? 0)
+  const baseImovel = valorImoveis > 0 ? valorImoveis : temImovel ? base : 0
+  const imovelProxy = valorImoveis <= 0 && temImovel // usando patrimônio como proxy
   const itbi = (baseImovel * ITBI_PCT) / 100
   const escritura = (baseImovel * ESCRITURA_PCT) / 100
   const custoMontagem = itbi + escritura
   const economiaLiquida = Math.max(0, economia - custoMontagem)
 
-  return { base, itcmd, custas, totalA, itcmdDoacaoB, totalB, economia, itbi, escritura, custoMontagem, economiaLiquida, temImovel }
+  return { base, itcmd, custas, totalA, itcmdDoacaoB, totalB, economia, itbi, escritura, custoMontagem, economiaLiquida, temImovel, baseImovel, imovelProxy }
 }
 
 // ---- cenário locação (PF × holding) ----------------------------------------

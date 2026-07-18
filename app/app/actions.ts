@@ -903,6 +903,7 @@ export async function updateOrganization(formData: FormData) {
     telefone: orNull(s(formData, 'telefone')),
     logo_url: orNull(s(formData, 'logo_url')),
     cor_primaria: orNull(s(formData, 'cor_primaria')),
+    alertas_ativos: formData.get('alertas_ativos') === 'on',
   }).eq('id', id)
   if (error) redirect('/app/configuracoes?error=' + encodeURIComponent(error.message))
   revalidatePath('/app/configuracoes')
@@ -1011,6 +1012,7 @@ export async function createRadarCliente(formData: FormData) {
     nome,
     uf: s(formData, 'uf') || 'SP',
     n_imoveis: Math.round(num('n_imoveis')),
+    valor_imoveis: num('valor_imoveis') > 0 ? num('valor_imoveis') : null,
     patrimonio: num('patrimonio'),
     renda_aluguel_anual: num('renda_aluguel_anual'),
     socio_pj: formData.get('socio_pj') === 'on',
@@ -1033,6 +1035,7 @@ export async function updateRadarSinais(formData: FormData) {
   const supabase = createClient()
   const payload: {
     n_imoveis: number
+    valor_imoveis: number | null
     patrimonio: number
     renda_aluguel_anual: number
     socio_pj: boolean
@@ -1049,6 +1052,7 @@ export async function updateRadarSinais(formData: FormData) {
     doacao_iniciada?: boolean
   } = {
     n_imoveis: Math.round(num('n_imoveis')),
+    valor_imoveis: num('valor_imoveis') > 0 ? num('valor_imoveis') : null,
     patrimonio: num('patrimonio'),
     renda_aluguel_anual: num('renda_aluguel_anual'),
     socio_pj: formData.get('socio_pj') === 'on',

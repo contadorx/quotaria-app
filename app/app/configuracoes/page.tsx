@@ -15,7 +15,7 @@ export default async function ConfiguracoesPage({
 
   const { data: org } = await supabase
     .from('organizations')
-    .select('id, nome, cnpj, crc, email_contato, telefone, logo_url, cor_primaria, assinatura_provedor, assinatura_token, perfil')
+    .select('id, nome, cnpj, crc, email_contato, telefone, logo_url, cor_primaria, assinatura_provedor, assinatura_token, perfil, alertas_ativos')
     .eq('id', orgId)
     .single()
   if (!org) redirect('/onboarding')
@@ -97,8 +97,25 @@ export default async function ConfiguracoesPage({
             </div>
           </div>
 
-          {searchParams?.error && <p className="text-sm font-medium text-red-600 sm:col-span-2">{searchParams.error}</p>}
-          {searchParams?.message && <p className="text-sm font-medium text-emerald-600 sm:col-span-2">{searchParams.message}</p>}
+          <div className="sm:col-span-2 rounded-xl border border-line bg-surface px-4 py-3">
+            <label className="flex items-start gap-3 text-sm text-ink">
+              <input
+                type="checkbox"
+                name="alertas_ativos"
+                defaultChecked={(org as { alertas_ativos?: boolean }).alertas_ativos !== false}
+                className="mt-0.5 h-4 w-4 rounded border-line"
+              />
+              <span>
+                <strong>Receber alertas por e-mail</strong>
+                <span className="mt-0.5 block text-xs text-ink-muted">
+                  Um resumo do que está vencido ou vence nos próximos dias (calendário, doações e atividades do Radar).
+                  Só chega quando há algo novo; se nada mudar, no máximo um lembrete por semana.
+                </span>
+              </span>
+            </label>
+          </div>
+
+          {searchParams?.error && <p className="text-sm font-medium text-red-600 sm:col-span-2">{searchParams.error}</p>}          {searchParams?.message && <p className="text-sm font-medium text-emerald-600 sm:col-span-2">{searchParams.message}</p>}
 
           {souAdmin && (
             <div className="sm:col-span-2">
